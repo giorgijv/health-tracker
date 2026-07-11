@@ -4,6 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { AssessmentPage } from "./pages/Assessment";
 import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
+import { ProgressPage } from "./pages/Progress";
 import { SignupPage } from "./pages/Signup";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -32,6 +33,14 @@ export function App() {
         element={
           <RequireAuth>
             <AssessmentPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/progress"
+        element={
+          <RequireAuth>
+            <ProgressPage />
           </RequireAuth>
         }
       />

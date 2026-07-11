@@ -9,9 +9,10 @@ export function DashboardPage() {
     <div className="dashboard">
       <h1>Welcome{session?.user.email ? `, ${session.user.email}` : ""}</h1>
       <p>Your health tracking dashboard will live here.</p>
-      <p>
+      <nav className="dashboard-nav">
         <Link to="/assessment">Take your initial assessment →</Link>
-      </p>
+        <Link to="/progress">Track your progress →</Link>
+      </nav>
       <button onClick={() => supabase.auth.signOut()}>Log out</button>
     </div>
   );

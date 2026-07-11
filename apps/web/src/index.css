@@ -106,3 +106,243 @@ body {
 .error {
   color: #dc2626;
 }
+
+/* ---- Progress dashboard + data-viz (palette from dataviz skill) ---- */
+
+.progress {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1rem;
+}
+
+.dashboard-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Viz color tokens — light defaults, dark overrides below. */
+.viz-root {
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --axis: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --series-1: #2a78d6; /* weight line (blue) */
+  --series-2: #1baf7a; /* workout bars (aqua) */
+  --good: #006300;
+  --bad: #c0392b;
+  --ring: rgba(11, 11, 11, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .viz-root {
+    --surface-1: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --axis: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --good: #0ca30c;
+    --bad: #e66767;
+    --ring: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.progress section {
+  margin: 1.5rem 0;
+}
+
+.progress h2 {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* stat tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.stat-tile {
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--surface-1);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.stat-unit {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.stat-delta {
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+.stat-delta.good { color: var(--good); }
+.stat-delta.bad { color: var(--bad); }
+.stat-delta.flat { color: var(--axis); }
+
+/* charts */
+.chart {
+  background: var(--surface-1);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  padding: 4px;
+  width: 100%;
+}
+
+.chart .line {
+  stroke: var(--series-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart .dot {
+  fill: var(--series-1);
+  stroke: var(--surface-1);
+  stroke-width: 2;
+}
+
+.chart .grid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.chart .crosshair {
+  stroke: var(--baseline);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart .axis-label {
+  fill: var(--axis);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .bar {
+  fill: var(--series-2);
+}
+.chart .bar.active {
+  fill: var(--series-1);
+}
+
+.chart .bar-label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: var(--text-primary);
+  color: var(--surface-1);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-empty {
+  color: var(--text-secondary);
+  padding: 2rem 1rem;
+  text-align: center;
+  border: 1px dashed var(--ring);
+  border-radius: 8px;
+}
+
+/* log forms */
+.log-forms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.log-form h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.log-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.log-form .row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.log-form .row label {
+  flex: 1;
+}
+
+.log-form input {
+  font: inherit;
+  padding: 0.35rem;
+}
+
+/* workout list */
+.workout-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.workout-list li {
+  display: flex;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--ring);
+  font-size: 0.9rem;
+}
+
+.workout-list .w-date {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.workout-list .w-type {
+  font-weight: 600;
+  flex: 1;
+}
+
+.workout-list .w-dur {
+  color: var(--text-secondary);
+}
