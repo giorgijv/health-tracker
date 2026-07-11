@@ -24,4 +24,15 @@ export interface BodyMetric {
   bodyFatPctEst: number | null;
   waistCm: number | null;
   source: "manual" | "photo_est";
+  createdAt: string;
+}
+
+export interface Workout {
+  id: string;
+  userId: string;
+  date: string;
+  type: string;
+  durationMin: number | null;
+  notes: string | null;
+  createdAt: string;
 }

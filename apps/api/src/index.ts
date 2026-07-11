@@ -1,7 +1,9 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
+import { metricsRouter } from "./routes/metrics.js";
 import { profileRouter } from "./routes/profile.js";
+import { workoutsRouter } from "./routes/workouts.js";
 
 const app = express();
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" }));
@@ -12,6 +14,8 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/profile", profileRouter);
+app.use("/api/metrics", metricsRouter);
+app.use("/api/workouts", workoutsRouter);
 
 const port = Number(process.env.PORT ?? 8787);
 app.listen(port, () => {

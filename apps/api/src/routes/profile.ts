@@ -7,6 +7,19 @@ export const profileRouter = Router();
 
 profileRouter.use(requireAuth);
 
+function toProfile(row: Record<string, unknown>) {
+  return {
+    userId: row.user_id,
+    age: row.age,
+    sex: row.sex,
+    heightCm: row.height_cm,
+    activityLevel: row.activity_level,
+    goals: row.goals,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 profileRouter.get("/", async (req: AuthedRequest, res) => {
   const { data, error } = await supabaseAdmin
     .from("profiles")
@@ -18,7 +31,7 @@ profileRouter.get("/", async (req: AuthedRequest, res) => {
     res.status(500).json({ error: error.message });
     return;
   }
-  res.json(data ?? null);
+  res.json(data ? toProfile(data) : null);
 });
 
 const upsertProfileSchema = z.object({
@@ -61,5 +74,5 @@ profileRouter.put("/", async (req: AuthedRequest, res) => {
     res.status(500).json({ error: error.message });
     return;
   }
-  res.json(data);
+  res.json(toProfile(data));
 });
