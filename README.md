@@ -18,13 +18,16 @@ supabase/migrations  SQL migrations (schema + row-level security)
 ## Setup
 
 1. **Create a Supabase project** at https://supabase.com/dashboard — free tier is fine.
-2. In the Supabase SQL editor, run `supabase/migrations/0001_init.sql`.
+2. In the Supabase SQL editor, run each migration in `supabase/migrations/` in
+   order (`0001_init.sql`, `0002_metrics_workouts.sql`, `0003_assessments.sql`).
 3. Copy env templates and fill in your project's values (Project Settings → API):
    ```
    cp apps/api/.env.example apps/api/.env
    cp apps/web/.env.example apps/web/.env
    ```
    - `apps/api/.env`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (keep this secret — server-only)
+   - `apps/api/.env`: `ANTHROPIC_API_KEY` (from https://console.anthropic.com — required for
+     the AI assessment; other endpoints work without it)
    - `apps/web/.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (safe for client use)
 4. Install dependencies and run:
    ```

@@ -17,6 +17,80 @@ body {
   padding: 2rem 1rem;
 }
 
+.assessment {
+  width: 100%;
+  max-width: 640px;
+  padding: 2rem 1rem;
+  line-height: 1.55;
+}
+
+.assessment form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assessment label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.assessment .row {
+  display: flex;
+  gap: 1rem;
+}
+
+.assessment .row label {
+  flex: 1;
+}
+
+.assessment textarea,
+.assessment input,
+.assessment select {
+  font: inherit;
+  padding: 0.4rem;
+}
+
+.assessment .focus-areas li {
+  margin-bottom: 0.75rem;
+}
+
+.assessment .pill {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.assessment .pill.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.assessment .pill.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.assessment .pill.low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.assessment .disclaimer {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+}
+
+.assessment .level {
+  opacity: 0.85;
+}
+
 .auth-page form {
   display: flex;
   flex-direction: column;
