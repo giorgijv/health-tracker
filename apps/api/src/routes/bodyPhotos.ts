@@ -3,36 +3,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { downloadImage, type MediaType } from "../lib/imageDownload.js";
 import { BODY_ANALYSIS_MODEL, analyzeBodyPhoto } from "../lib/bodyAnalysis.js";
 
 export const bodyPhotosRouter = Router();
 
 bodyPhotosRouter.use(requireAuth);
-
-type MediaType = "image/jpeg" | "image/png" | "image/webp";
-
-function mediaTypeFor(path: string): MediaType | null {
-  const lower = path.toLowerCase();
-  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-  if (lower.endsWith(".png")) return "image/png";
-  if (lower.endsWith(".webp")) return "image/webp";
-  return null;
-}
-
-async function downloadImage(
-  storagePath: string,
-): Promise<{ base64: string; mediaType: MediaType } | null> {
-  const mediaType = mediaTypeFor(storagePath);
-  if (!mediaType) return null;
-
-  const { data, error } = await supabaseAdmin.storage
-    .from(BODY_PHOTOS_BUCKET)
-    .download(storagePath);
-  if (error || !data) return null;
-
-  const buf = Buffer.from(await data.arrayBuffer());
-  return { base64: buf.toString("base64"), mediaType };
-}
 
 function toBodyPhoto(row: Record<string, unknown>) {
   return {
@@ -52,7 +28,7 @@ async function runAnalysis(
   userId: string,
   row: { id: string; storage_path: string; angle: string; taken_at: string },
 ) {
-  const current = await downloadImage(row.storage_path);
+  const current = await downloadImage(BODY_PHOTOS_BUCKET, row.storage_path);
   if (!current) throw new Error("Could not read the uploaded image");
 
   const { data: priorRows } = await supabaseAdmin
@@ -68,7 +44,7 @@ async function runAnalysis(
   let previous: { base64: string; mediaType: MediaType } | undefined;
   const priorPath = priorRows?.[0]?.storage_path;
   if (priorPath) {
-    previous = (await downloadImage(priorPath)) ?? undefined;
+    previous = (await downloadImage(BODY_PHOTOS_BUCKET, priorPath)) ?? undefined;
   }
 
   const analysis = await analyzeBodyPhoto({ current, previous, angle: row.angle });

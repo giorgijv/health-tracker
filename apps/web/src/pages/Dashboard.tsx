@@ -13,6 +13,7 @@ export function DashboardPage() {
         <Link to="/assessment">Take your initial assessment →</Link>
         <Link to="/progress">Track your progress →</Link>
         <Link to="/body-photos">Body photos →</Link>
+        <Link to="/food-log">Food log →</Link>
       </nav>
       <button onClick={() => supabase.auth.signOut()}>Log out</button>
     </div>

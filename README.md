@@ -19,11 +19,11 @@ supabase/migrations  SQL migrations (schema + row-level security)
 
 1. **Create a Supabase project** at https://supabase.com/dashboard — free tier is fine.
 2. In the Supabase SQL editor, run each migration in `supabase/migrations/` in
-   order (`0001_init.sql`, `0002_metrics_workouts.sql`, `0003_assessments.sql`,
-   `0004_body_photos.sql`). `0004` also creates a private `body-photos` storage
-   bucket and its access policies; if the storage-policy statements error in the
-   SQL editor, create the bucket (private) and equivalent policies from the
-   Storage section of the dashboard instead.
+   order (`0001_init.sql` … `0005_food_logs.sql`). `0004` and `0005` also create
+   private storage buckets (`body-photos`, `food-photos`) and their access
+   policies; if the storage-policy statements error in the SQL editor, create the
+   buckets (private) and equivalent policies from the Storage section of the
+   dashboard instead.
 3. Copy env templates and fill in your project's values (Project Settings → API):
    ```
    cp apps/api/.env.example apps/api/.env

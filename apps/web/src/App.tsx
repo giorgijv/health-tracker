@@ -4,6 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { AssessmentPage } from "./pages/Assessment";
 import { BodyPhotosPage } from "./pages/BodyPhotos";
 import { DashboardPage } from "./pages/Dashboard";
+import { FoodLogPage } from "./pages/FoodLog";
 import { LoginPage } from "./pages/Login";
 import { ProgressPage } from "./pages/Progress";
 import { SignupPage } from "./pages/Signup";
@@ -50,6 +51,14 @@ export function App() {
         element={
           <RequireAuth>
             <BodyPhotosPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/food-log"
+        element={
+          <RequireAuth>
+            <FoodLogPage />
           </RequireAuth>
         }
       />

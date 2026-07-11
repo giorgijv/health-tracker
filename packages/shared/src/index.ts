@@ -104,3 +104,63 @@ export interface BodyPhoto {
 }
 
 export const BODY_PHOTOS_BUCKET = "body-photos";
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export interface FoodItem {
+  name: string;
+  estGrams: number;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface NutritionalQuality {
+  rating: "poor" | "fair" | "good" | "excellent";
+  notes: string;
+}
+
+/** What the vision call returns before the user edits anything. */
+export interface FoodAnalysis {
+  items: FoodItem[];
+  confidence: "low" | "medium" | "high";
+  nutritionalQuality: NutritionalQuality;
+  cautions: string[];
+}
+
+export interface FoodTotals {
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface FoodLog {
+  id: string;
+  userId: string;
+  storagePath: string;
+  eatenAt: string;
+  mealType: MealType;
+  items: FoodItem[];
+  totals: FoodTotals;
+  confidence: "low" | "medium" | "high" | null;
+  nutritionalQuality: NutritionalQuality | null;
+  model: string | null;
+  createdAt: string;
+}
+
+export const FOOD_PHOTOS_BUCKET = "food-photos";
+
+/** Sum per-item macros into meal totals. Used on both client and server. */
+export function sumFoodItems(items: FoodItem[]): FoodTotals {
+  return items.reduce<FoodTotals>(
+    (t, it) => ({
+      calories: t.calories + (it.calories || 0),
+      proteinG: t.proteinG + (it.proteinG || 0),
+      carbsG: t.carbsG + (it.carbsG || 0),
+      fatG: t.fatG + (it.fatG || 0),
+    }),
+    { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+  );
+}
