@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { AssessmentPage } from "./pages/Assessment";
+import { BodyPhotosPage } from "./pages/BodyPhotos";
 import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
 import { ProgressPage } from "./pages/Progress";
@@ -41,6 +42,14 @@ export function App() {
         element={
           <RequireAuth>
             <ProgressPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/body-photos"
+        element={
+          <RequireAuth>
+            <BodyPhotosPage />
           </RequireAuth>
         }
       />

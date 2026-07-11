@@ -76,3 +76,31 @@ export interface Assessment {
   model: string;
   createdAt: string;
 }
+
+export type BodyPhotoAngle = "front" | "side" | "back";
+
+/**
+ * Qualitative visual read of a body photo. Explicitly NOT a measurement or
+ * medical assessment — estimates are rough and confidence-flagged.
+ */
+export interface BodyPhotoAnalysis {
+  observations: string[];
+  comparisonToPrevious: string | null;
+  estimatedBodyFatRange: string | null;
+  confidence: "low" | "medium" | "high";
+  cautions: string[];
+  encouragement: string;
+}
+
+export interface BodyPhoto {
+  id: string;
+  userId: string;
+  storagePath: string;
+  angle: BodyPhotoAngle;
+  takenAt: string;
+  analysis: BodyPhotoAnalysis | null;
+  model: string | null;
+  createdAt: string;
+}
+
+export const BODY_PHOTOS_BUCKET = "body-photos";

@@ -12,6 +12,7 @@ export function DashboardPage() {
       <nav className="dashboard-nav">
         <Link to="/assessment">Take your initial assessment →</Link>
         <Link to="/progress">Track your progress →</Link>
+        <Link to="/body-photos">Body photos →</Link>
       </nav>
       <button onClick={() => supabase.auth.signOut()}>Log out</button>
     </div>
