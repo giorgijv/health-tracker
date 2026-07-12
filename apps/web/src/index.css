@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light dark;
   font-family: system-ui, sans-serif;
@@ -39,10 +45,12 @@ body {
 .assessment .row {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .assessment .row label {
-  flex: 1;
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .assessment textarea,
@@ -50,6 +58,7 @@ body {
 .assessment select {
   font: inherit;
   padding: 0.4rem;
+  width: 100%;
 }
 
 .assessment .focus-areas li {
@@ -307,15 +316,18 @@ body {
 .log-form .row {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .log-form .row label {
-  flex: 1;
+  flex: 1 1 90px;
+  min-width: 0;
 }
 
 .log-form input {
   font: inherit;
   padding: 0.35rem;
+  width: 100%;
 }
 
 /* workout list */
@@ -1184,16 +1196,22 @@ body {
 .onboarding .row {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .onboarding .row label {
-  flex: 1;
+  flex: 1 1 120px;
+  /* Flex items default to min-width: auto, which floors them at their
+     content's intrinsic width and can force the row (and the whole
+     centered page) wider than the viewport on narrow phones. */
+  min-width: 0;
 }
 
 .onboarding input,
 .onboarding select {
   font: inherit;
   padding: 0.4rem;
+  width: 100%;
 }
 
 .onboarding-actions {
