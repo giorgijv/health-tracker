@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { assessmentsRouter } from "./routes/assessments.js";
 import { bodyPhotosRouter } from "./routes/bodyPhotos.js";
+import { chatRouter } from "./routes/chat.js";
 import { foodLogsRouter } from "./routes/foodLogs.js";
 import { metricsRouter } from "./routes/metrics.js";
 import { profileRouter } from "./routes/profile.js";
@@ -24,6 +25,7 @@ app.use("/api/assessments", assessmentsRouter);
 app.use("/api/body-photos", bodyPhotosRouter);
 app.use("/api/food-logs", foodLogsRouter);
 app.use("/api/recommendations", recommendationsRouter);
+app.use("/api/chat", chatRouter);
 
 const port = Number(process.env.PORT ?? 8787);
 app.listen(port, () => {

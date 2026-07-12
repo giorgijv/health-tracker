@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { AssessmentPage } from "./pages/Assessment";
 import { BodyPhotosPage } from "./pages/BodyPhotos";
+import { CoachPage } from "./pages/Coach";
 import { DashboardPage } from "./pages/Dashboard";
 import { FoodLogPage } from "./pages/FoodLog";
 import { LoginPage } from "./pages/Login";
@@ -68,6 +69,14 @@ export function App() {
         element={
           <RequireAuth>
             <RecommendationsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/coach"
+        element={
+          <RequireAuth>
+            <CoachPage />
           </RequireAuth>
         }
       />
