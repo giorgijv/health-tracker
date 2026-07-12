@@ -1,13 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { createWorkoutSchema, updateWorkoutSchema } from "./workouts.schema.js";
 
 export const workoutsRouter = Router();
 
 workoutsRouter.use(requireAuth);
-
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 function toWorkout(row: Record<string, unknown>) {
   return {
@@ -41,13 +39,6 @@ workoutsRouter.get("/", async (req: AuthedRequest, res) => {
   res.json(data.map(toWorkout));
 });
 
-const createWorkoutSchema = z.object({
-  date: isoDate,
-  type: z.string().min(1).max(60),
-  durationMin: z.number().int().min(0).max(1440).nullable().optional(),
-  notes: z.string().max(2000).nullable().optional(),
-});
-
 workoutsRouter.post("/", async (req: AuthedRequest, res) => {
   const parsed = createWorkoutSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -74,8 +65,6 @@ workoutsRouter.post("/", async (req: AuthedRequest, res) => {
   }
   res.status(201).json(toWorkout(data));
 });
-
-const updateWorkoutSchema = createWorkoutSchema.partial();
 
 workoutsRouter.patch("/:id", async (req: AuthedRequest, res) => {
   const parsed = updateWorkoutSchema.safeParse(req.body);

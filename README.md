@@ -54,6 +54,19 @@ render.yaml, DEPLOY.md   Deployment blueprint & guide
    npm run dev:web   # http://localhost:5173
    ```
 
+## Testing
+
+```
+npm test
+```
+
+Runs the unit test suite (vitest) across all three workspaces: pure logic in
+`apps/web/src/lib/progress.ts` and `apps/api/src/lib/recommendationContext.ts`,
+the shared `sumFoodItems` helper, the per-user rate limiter, and the
+metrics/workouts input-validation schemas. Runs in CI on every push and PR.
+Route handlers themselves aren't covered yet (would need integration tests
+against a real or test Supabase project) — see `DEPLOY.md` for that gap.
+
 ## Auth flow
 
 - Frontend uses `@supabase/supabase-js` directly for sign up / log in / log out

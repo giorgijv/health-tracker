@@ -1,13 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { createMetricSchema, updateMetricSchema } from "./metrics.schema.js";
 
 export const metricsRouter = Router();
 
 metricsRouter.use(requireAuth);
-
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 function toBodyMetric(row: Record<string, unknown>) {
   return {
@@ -42,14 +40,6 @@ metricsRouter.get("/", async (req: AuthedRequest, res) => {
   res.json(data.map(toBodyMetric));
 });
 
-const createMetricSchema = z.object({
-  date: isoDate,
-  weightKg: z.number().min(20).max(400).nullable().optional(),
-  bodyFatPctEst: z.number().min(1).max(70).nullable().optional(),
-  waistCm: z.number().min(30).max(300).nullable().optional(),
-  source: z.enum(["manual", "photo_est"]).optional(),
-});
-
 metricsRouter.post("/", async (req: AuthedRequest, res) => {
   const parsed = createMetricSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -77,8 +67,6 @@ metricsRouter.post("/", async (req: AuthedRequest, res) => {
   }
   res.status(201).json(toBodyMetric(data));
 });
-
-const updateMetricSchema = createMetricSchema.partial();
 
 metricsRouter.patch("/:id", async (req: AuthedRequest, res) => {
   const parsed = updateMetricSchema.safeParse(req.body);

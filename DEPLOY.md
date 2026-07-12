@@ -78,12 +78,30 @@ back to the live site instead of `localhost`.
 > switching Supabase to PKCE flow (query-param based, no hash), which isn't
 > done yet — flagging as a follow-up rather than shipping it unverified.
 
-## 6. Cost & rate limiting notes
+## 6. Reliability notes
 
-- Each user has an in-memory AI-spend cap (40 model calls/hour) enforced in
-  `apps/api/src/middleware/rateLimit.ts`. This is **per API instance** — if you
-  scale the API to multiple instances, move the limiter to a shared store (Redis)
-  so the budget is global.
+- **Transient AI failures (network blips, 429/5xx from Anthropic)**: already
+  handled — the Anthropic SDK retries these automatically (2 retries with
+  backoff, out of the box). No custom retry code needed or added.
+- **Rate limiting**: each user has an in-memory AI-spend cap (40 model
+  calls/hour) enforced in `apps/api/src/middleware/rateLimit.ts`. This is
+  **per API instance** and resets on restart — fine for the current single
+  free-tier Render instance. If you ever scale to multiple instances, move it
+  to a shared store (e.g. Redis) so the budget is global. Not done now —
+  premature for current scale.
+- **Error visibility**: failures currently only show up in Render's server
+  logs (`console.error` calls throughout the route handlers) — there's no
+  external error tracking (e.g. Sentry) wired up. That's a deliberate gap,
+  not an oversight: adding one means a new third-party account/API key, same
+  as Supabase and Render did. Worth doing before real users depend on this,
+  not required to keep building.
+- **Automated tests**: `npm test` (vitest) covers the pure logic and
+  validation schemas — see README § Testing. Route handlers and the actual
+  Claude API calls aren't covered by automated tests; they were verified
+  manually during each build step (auth-gating, server boot, production
+  builds) but that verification doesn't run again on future changes. Real
+  regression coverage there would need integration tests against a live (or
+  dockerized) Supabase instance — not set up yet.
 - Model/effort choices per feature (tune in the respective `lib/*.ts`):
   | Feature | Model | Effort |
   |---|---|---|
