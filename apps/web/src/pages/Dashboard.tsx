@@ -1,5 +1,8 @@
-import { Link } from "react-router-dom";
+import type { Profile } from "@health-tracker/shared";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
+import { apiFetch } from "../lib/api";
 
 const FEATURES: { to: string; title: string; desc: string }[] = [
   { to: "/assessment", title: "Assessment", desc: "Get your read and re-assess your progress" },
@@ -12,6 +15,20 @@ const FEATURES: { to: string; title: string; desc: string }[] = [
 
 export function DashboardPage() {
   const { session } = useAuth();
+  // null = "haven't checked yet", false = "checked, no redirect needed".
+  // A profile row only exists once onboarding has been completed or skipped
+  // (see Onboarding.tsx), so its absence is the "new user" signal — no extra
+  // schema or flag needed.
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    apiFetch<Profile | null>("/api/profile")
+      .then((profile) => setNeedsOnboarding(profile === null))
+      .catch(() => setNeedsOnboarding(false)); // fail open — don't block the dashboard on a network hiccup
+  }, []);
+
+  if (needsOnboarding === null) return null;
+  if (needsOnboarding) return <Navigate to="/onboarding" replace />;
 
   return (
     <div className="dashboard-home">

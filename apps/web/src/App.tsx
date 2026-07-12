@@ -7,6 +7,7 @@ import { CoachPage } from "./pages/Coach";
 import { DashboardPage } from "./pages/Dashboard";
 import { FoodLogPage } from "./pages/FoodLog";
 import { LoginPage } from "./pages/Login";
+import { OnboardingPage } from "./pages/Onboarding";
 import { ProgressPage } from "./pages/Progress";
 import { RecommendationsPage } from "./pages/Recommendations";
 import { SettingsPage } from "./pages/Settings";
@@ -30,6 +31,14 @@ export function App() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
           </RequireAuth>
         }
       />
