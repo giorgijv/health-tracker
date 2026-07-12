@@ -119,3 +119,78 @@ export async function generateAssessment(intake: Parameters<typeof formatIntake>
 
   return response.parsed_output;
 }
+
+// --- Periodic re-assessment: same shape plus a "how far you've come" read,
+// --- grounded in tracked history and the previous assessment. ---
+
+export const periodicAssessmentSchema = assessmentSummarySchema.extend({
+  progressSinceLast: z
+    .string()
+    .describe(
+      "An honest, encouraging 'how far you've come' read: what has changed since the last " +
+        "assessment, based on the tracked data and the previous assessment. Celebrate real wins; " +
+        "be straight about what's stalled.",
+    ),
+});
+
+const PERIODIC_SYSTEM_PROMPT = `You are a health and fitness coach writing a periodic re-assessment \
+for an existing client, checking in on their progress.
+
+You are given their recent tracked data (weight, workouts, nutrition) and their previous assessment. \
+Your job:
+- Write a 'how far you've come' read that compares now to the last assessment, grounded in the actual \
+data. Celebrate genuine progress; be honest where things have stalled or slipped. Don't invent \
+changes the data doesn't show.
+- Re-judge their overall level and UPDATE the focus areas for where they are now — retire ones they've \
+addressed, add new ones that matter at this stage.
+- Same guardrails as always: coach not doctor, no diagnosis, flag anything warranting professional \
+input, plain and human language, no jargon dumps or emoji.`;
+
+function formatPreviousSummary(prev: {
+  overallLevel: string;
+  focusAreas: { title: string }[];
+} | null): string {
+  if (!prev) return "No previous assessment on record.";
+  return (
+    `Previous overall level: ${prev.overallLevel}\n` +
+    `Previous focus areas: ${
+      prev.focusAreas.length ? prev.focusAreas.map((f) => f.title).join("; ") : "none recorded"
+    }`
+  );
+}
+
+export async function generatePeriodicAssessment(params: {
+  contextText: string;
+  previous: { overallLevel: string; focusAreas: { title: string }[] } | null;
+}) {
+  const client = getAnthropic();
+
+  const response = await client.messages.parse({
+    model: ASSESSMENT_MODEL,
+    max_tokens: 16000,
+    thinking: { type: "adaptive" },
+    output_config: {
+      effort: "high",
+      format: zodOutputFormat(periodicAssessmentSchema),
+    },
+    system: PERIODIC_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content:
+          "Here is my recent tracked data and my previous assessment. Write my re-assessment, " +
+          "including how far I've come.\n\n" +
+          `RECENT DATA\n${params.contextText}\n\n` +
+          `PREVIOUS ASSESSMENT\n${formatPreviousSummary(params.previous)}`,
+      },
+    ],
+  });
+
+  if (!response.parsed_output) {
+    throw new Error(
+      `Periodic assessment did not return a valid structured result (stop_reason: ${response.stop_reason})`,
+    );
+  }
+
+  return response.parsed_output;
+}

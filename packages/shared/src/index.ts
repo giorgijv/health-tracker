@@ -58,20 +58,23 @@ export interface AssessmentFocusArea {
   priority: "high" | "medium" | "low";
 }
 
-/** The structured write-up Claude produces from the intake. */
+/** The structured write-up Claude produces. */
 export interface AssessmentSummary {
   narrative: string;
   overallLevel: "beginner" | "intermediate" | "advanced";
   focusAreas: AssessmentFocusArea[];
   strengths: string[];
   cautions: string[];
+  /** "How far you've come" — populated for periodic re-assessments, absent for initial. */
+  progressSinceLast?: string | null;
 }
 
 export interface Assessment {
   id: string;
   userId: string;
   type: AssessmentType;
-  intake: AssessmentIntake;
+  /** The questionnaire for initial assessments; null for auto-generated periodic ones. */
+  intake: AssessmentIntake | null;
   summary: AssessmentSummary;
   model: string;
   createdAt: string;

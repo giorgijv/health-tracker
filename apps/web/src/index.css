@@ -931,3 +931,74 @@ body {
     border-color: #2f4664;
   }
 }
+
+/* ---- Assessment overview / re-assessment (step 9) ---- */
+
+.assessment-actions,
+.assessment .draft-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.assessment-actions button,
+.assessment .draft-actions button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(11, 11, 11, 0.2);
+  background: #2a78d6;
+  color: #fff;
+  cursor: pointer;
+}
+
+.assessment-actions .secondary,
+.assessment .draft-actions .secondary {
+  background: none;
+  color: inherit;
+}
+
+.assessment-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.assessment-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.history-chip {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 11, 11, 0.2);
+  background: none;
+  cursor: pointer;
+}
+
+.history-chip.active {
+  background: #2a78d6;
+  color: #fff;
+  border-color: #2a78d6;
+}
+
+.progress-since {
+  border-left: 3px solid #1baf7a;
+  background: rgba(27, 175, 122, 0.08);
+  padding: 0.5rem 0.85rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1rem 0;
+}
+
+.progress-since h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.assessment .level .pill {
+  margin-left: 0.5rem;
+}

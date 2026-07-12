@@ -2,18 +2,26 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { supabaseAdmin } from "../lib/supabase.js";
-import { ASSESSMENT_MODEL, generateAssessment } from "../lib/assessment.js";
+import {
+  ASSESSMENT_MODEL,
+  generateAssessment,
+  generatePeriodicAssessment,
+} from "../lib/assessment.js";
+import { formatContext, gatherUserContext } from "../lib/userContext.js";
 
 export const assessmentsRouter = Router();
 
 assessmentsRouter.use(requireAuth);
 
 function toAssessment(row: Record<string, unknown>) {
+  // Periodic assessments store an auto-context object in intake_json rather than
+  // a questionnaire; surface intake as null for those.
+  const intakeJson = row.intake_json as { auto?: boolean } | null;
   return {
     id: row.id,
     userId: row.user_id,
     type: row.type,
-    intake: row.intake_json,
+    intake: intakeJson?.auto ? null : intakeJson,
     summary: row.summary_json,
     model: row.model,
     createdAt: row.created_at,
@@ -114,6 +122,64 @@ assessmentsRouter.post("/", async (req: AuthedRequest, res) => {
       user_id: req.userId,
       type: parsed.data.type ?? "initial",
       intake_json: intake,
+      summary_json: summary,
+      model: ASSESSMENT_MODEL,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return;
+  }
+  res.status(201).json(toAssessment(data));
+});
+
+// Periodic re-assessment: no questionnaire — pulls tracked history and the
+// previous assessment automatically.
+assessmentsRouter.post("/periodic", async (req: AuthedRequest, res) => {
+  const { data: prevRow } = await supabaseAdmin
+    .from("assessments")
+    .select("id, summary_json")
+    .eq("user_id", req.userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const prevSummary = prevRow?.summary_json as
+    | { overallLevel?: string; focusAreas?: { title: string }[] }
+    | undefined;
+
+  const contextText = formatContext(await gatherUserContext(req.userId!));
+
+  let summary;
+  try {
+    summary = await generatePeriodicAssessment({
+      contextText,
+      previous: prevSummary
+        ? {
+            overallLevel: prevSummary.overallLevel ?? "unknown",
+            focusAreas: prevSummary.focusAreas ?? [],
+          }
+        : null,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    if (message.includes("ANTHROPIC_API_KEY is not set")) {
+      res.status(503).json({ error: "AI assessment is not configured (missing API key)." });
+      return;
+    }
+    console.error("Periodic assessment failed:", message);
+    res.status(502).json({ error: "Failed to generate re-assessment." });
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("assessments")
+    .insert({
+      user_id: req.userId,
+      type: "periodic",
+      intake_json: { auto: true, context: contextText, previousAssessmentId: prevRow?.id ?? null },
       summary_json: summary,
       model: ASSESSMENT_MODEL,
     })
