@@ -2,7 +2,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// GH_PAGES=true is set only by the GitHub Pages deploy workflow. Local dev and
+// the Render static-site build both serve from the domain root ("/").
+const base = process.env.GH_PAGES === "true" ? "/health-tracker/" : "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({

@@ -6,9 +6,10 @@ The app is two deployable pieces plus Supabase:
 - **Web** (`apps/web`) — a static PWA build.
 - **Supabase** — Postgres + Auth + Storage (already set up per the README).
 
-`render.yaml` is a ready-made [Render](https://render.com) blueprint for both,
-but the pieces deploy anywhere (the API on Fly/Railway/a VPS, the web build on
-Netlify/Vercel/Cloudflare Pages).
+`render.yaml` is a ready-made [Render](https://render.com) blueprint for both.
+Alternatively, the web app can be hosted for free on **GitHub Pages** (see § 6)
+— but the API still needs to run *somewhere* (Render, Fly, Railway, a VPS) for
+anything beyond login/signup to work, since Pages only serves static files.
 
 ## 1. Prerequisites
 
@@ -72,3 +73,36 @@ production.
 
   The photo/assessment calls are the expensive ones. If cost is a concern before
   quality is validated, drop those to `medium` first.
+
+## 6. GitHub Pages (free static hosting for the web app)
+
+`.github/workflows/deploy-pages.yml` builds `apps/web` and deploys it to Pages
+automatically on every push to `main`. What it needs from you, once:
+
+1. **Enable Pages**: repo → Settings → Pages → *Build and deployment* → Source
+   → **GitHub Actions**. (Not "Deploy from a branch" — the workflow handles
+   publishing itself.)
+2. **Add repository secrets**: repo → Settings → Secrets and variables →
+   Actions → New repository secret:
+   - `VITE_SUPABASE_URL` — your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` — the Supabase **anon/publishable** key (safe to
+     expose client-side; it's gated by row-level security, not secrecy — never
+     put the `service_role` key here)
+   - `VITE_API_URL` — your deployed API's URL (e.g. from step 2 above). If you
+     haven't deployed the API yet, leave this unset for now: the site will
+     still load and login/signup will work (Supabase auth runs entirely
+     client-side), but every data/AI feature will show a fetch error until
+     it's set and the workflow re-runs.
+3. Push to `main` (or run the workflow manually from the Actions tab). The site
+   publishes to `https://<your-username>.github.io/health-tracker/`.
+
+Notes:
+- The build sets `GH_PAGES=true`, which switches the Vite `base` to
+  `/health-tracker/` so assets resolve under the repo subpath (see
+  `apps/web/vite.config.ts`). Don't set this locally.
+- Routing uses `HashRouter` (URLs look like `.../#/progress`), not
+  `BrowserRouter` — GitHub Pages has no server-side rewrites, so a plain path
+  route 404s on refresh; hash routes always resolve to `index.html`.
+- Changing a `VITE_*` secret doesn't retroactively update the live site — it
+  only takes effect on the next workflow run (push to `main`, or re-run the
+  workflow manually).
