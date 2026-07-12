@@ -679,3 +679,123 @@ body {
   padding: 0.2rem 0.5rem;
   cursor: pointer;
 }
+
+/* ---- Recommendations ---- */
+
+.recommendations {
+  width: 100%;
+  max-width: 680px;
+  padding: 2rem 1rem;
+}
+
+.recommendations .lead {
+  color: #52514e;
+}
+
+.recommendations .generate {
+  margin: 0.5rem 0 1rem;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rec-summary {
+  border-left: 3px solid #2a78d6;
+  padding: 0.5rem 0.75rem;
+  margin: 1rem 0;
+  background: rgba(42, 120, 214, 0.06);
+  border-radius: 0 6px 6px 0;
+}
+
+.rec-summary .rec-date {
+  font-size: 0.75rem;
+  color: #898781;
+}
+
+.rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rec-card {
+  border: 1px solid rgba(11, 11, 11, 0.12);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.rec-card.done {
+  opacity: 0.6;
+}
+
+.rec-card h3 {
+  margin: 0.3rem 0;
+  font-size: 1rem;
+}
+
+.rec-card p {
+  margin: 0.3rem 0;
+}
+
+.rec-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.rec-cat {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: #eef2f7;
+  color: #334155;
+}
+
+.rec-pri {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+.rec-pri.high { background: #fee2e2; color: #991b1b; }
+.rec-pri.medium { background: #fef3c7; color: #92400e; }
+.rec-pri.low { background: #dcfce7; color: #166534; }
+
+.rec-basis {
+  font-size: 0.8rem;
+  color: #898781;
+}
+
+.rec-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rec-actions button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid rgba(11, 11, 11, 0.2);
+  background: #f1f5f9;
+  cursor: pointer;
+}
+
+.rec-actions .secondary {
+  background: none;
+}
+
+.dismissed-note {
+  font-size: 0.8rem;
+  color: #898781;
+  margin-top: 0.75rem;
+}
+
+.recommendations .disclaimer {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.75rem;
+  margin-top: 1.5rem;
+}

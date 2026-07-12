@@ -164,3 +164,38 @@ export function sumFoodItems(items: FoodItem[]): FoodTotals {
     { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
   );
 }
+
+export type RecommendationCategory =
+  | "nutrition"
+  | "training"
+  | "recovery"
+  | "consistency"
+  | "measurement"
+  | "general";
+
+export type RecommendationPriority = "high" | "medium" | "low";
+export type RecommendationStatus = "active" | "done" | "dismissed";
+
+export interface Recommendation {
+  id: string;
+  userId: string;
+  runId: string;
+  category: RecommendationCategory;
+  title: string;
+  detail: string;
+  priority: RecommendationPriority;
+  /** The specific data point this is grounded in. */
+  basis: string;
+  status: RecommendationStatus;
+  createdAt: string;
+}
+
+/** One generation pass: a read of the data plus the recommendations it produced. */
+export interface RecommendationRun {
+  id: string;
+  userId: string;
+  summary: string;
+  model: string;
+  createdAt: string;
+  recommendations: Recommendation[];
+}

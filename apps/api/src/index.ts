@@ -6,6 +6,7 @@ import { bodyPhotosRouter } from "./routes/bodyPhotos.js";
 import { foodLogsRouter } from "./routes/foodLogs.js";
 import { metricsRouter } from "./routes/metrics.js";
 import { profileRouter } from "./routes/profile.js";
+import { recommendationsRouter } from "./routes/recommendations.js";
 import { workoutsRouter } from "./routes/workouts.js";
 
 const app = express();
@@ -22,6 +23,7 @@ app.use("/api/workouts", workoutsRouter);
 app.use("/api/assessments", assessmentsRouter);
 app.use("/api/body-photos", bodyPhotosRouter);
 app.use("/api/food-logs", foodLogsRouter);
+app.use("/api/recommendations", recommendationsRouter);
 
 const port = Number(process.env.PORT ?? 8787);
 app.listen(port, () => {

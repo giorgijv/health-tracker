@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { FoodLogPage } from "./pages/FoodLog";
 import { LoginPage } from "./pages/Login";
 import { ProgressPage } from "./pages/Progress";
+import { RecommendationsPage } from "./pages/Recommendations";
 import { SignupPage } from "./pages/Signup";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -59,6 +60,14 @@ export function App() {
         element={
           <RequireAuth>
             <FoodLogPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/recommendations"
+        element={
+          <RequireAuth>
+            <RecommendationsPage />
           </RequireAuth>
         }
       />
