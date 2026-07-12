@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { classifyAiError } from "../lib/aiError.js";
 import { downloadImage } from "../lib/imageDownload.js";
 import { FOOD_ANALYSIS_MODEL, analyzeFoodPhoto } from "../lib/foodAnalysis.js";
 
@@ -61,13 +62,9 @@ foodLogsRouter.post("/analyze", aiRateLimit, async (req: AuthedRequest, res) => 
     const analysis = await analyzeFoodPhoto(image);
     res.json(analysis);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("ANTHROPIC_API_KEY is not set")) {
-      res.status(503).json({ error: "AI analysis is not configured (missing API key)." });
-      return;
-    }
-    console.error("Food analysis failed:", message);
-    res.status(502).json({ error: "Failed to analyze the photo." });
+    const info = classifyAiError(err);
+    console.error(`Food analysis failed [${info.label}]:`, err);
+    res.status(info.status).json({ error: info.message });
   }
 });
 

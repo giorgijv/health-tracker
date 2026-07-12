@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { classifyAiError } from "../lib/aiError.js";
 import {
   ASSESSMENT_MODEL,
   generateAssessment,
@@ -107,13 +108,9 @@ assessmentsRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
   try {
     summary = await generateAssessment(intake);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("ANTHROPIC_API_KEY is not set")) {
-      res.status(503).json({ error: "AI assessment is not configured (missing API key)." });
-      return;
-    }
-    console.error("Assessment generation failed:", message);
-    res.status(502).json({ error: "Failed to generate assessment." });
+    const info = classifyAiError(err);
+    console.error(`Assessment generation failed [${info.label}]:`, err);
+    res.status(info.status).json({ error: info.message });
     return;
   }
 
@@ -165,13 +162,9 @@ assessmentsRouter.post("/periodic", aiRateLimit, async (req: AuthedRequest, res)
         : null,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("ANTHROPIC_API_KEY is not set")) {
-      res.status(503).json({ error: "AI assessment is not configured (missing API key)." });
-      return;
-    }
-    console.error("Periodic assessment failed:", message);
-    res.status(502).json({ error: "Failed to generate re-assessment." });
+    const info = classifyAiError(err);
+    console.error(`Periodic assessment failed [${info.label}]:`, err);
+    res.status(info.status).json({ error: info.message });
     return;
   }
 

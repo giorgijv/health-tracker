@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { classifyAiError } from "../lib/aiError.js";
 import { formatContext, gatherUserContext } from "../lib/userContext.js";
 import { chatReply, generateNudge } from "../lib/chat.js";
 
@@ -24,13 +25,9 @@ function toChatMessage(row: Record<string, unknown>) {
 }
 
 function aiError(res: import("express").Response, err: unknown) {
-  const message = err instanceof Error ? err.message : "Unknown error";
-  if (message.includes("ANTHROPIC_API_KEY is not set")) {
-    res.status(503).json({ error: "AI chat is not configured (missing API key)." });
-    return;
-  }
-  console.error("Chat AI call failed:", message);
-  res.status(502).json({ error: "The coach couldn't respond just now — try again." });
+  const info = classifyAiError(err);
+  console.error(`Chat AI call failed [${info.label}]:`, err);
+  res.status(info.status).json({ error: info.message });
 }
 
 chatRouter.get("/", async (req: AuthedRequest, res) => {

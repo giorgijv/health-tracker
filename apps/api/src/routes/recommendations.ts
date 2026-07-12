@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { classifyAiError } from "../lib/aiError.js";
 import { formatContext, gatherUserContext } from "../lib/userContext.js";
 import { RECOMMENDATIONS_MODEL, generateRecommendations } from "../lib/recommendations.js";
 
@@ -32,13 +33,9 @@ recommendationsRouter.post("/generate", aiRateLimit, async (req: AuthedRequest, 
   try {
     output = await generateRecommendations(formatContext(context));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("ANTHROPIC_API_KEY is not set")) {
-      res.status(503).json({ error: "AI recommendations are not configured (missing API key)." });
-      return;
-    }
-    console.error("Recommendation generation failed:", message);
-    res.status(502).json({ error: "Failed to generate recommendations." });
+    const info = classifyAiError(err);
+    console.error(`Recommendation generation failed [${info.label}]:`, err);
+    res.status(info.status).json({ error: info.message });
     return;
   }
 

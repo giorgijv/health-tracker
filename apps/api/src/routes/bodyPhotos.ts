@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { classifyAiError } from "../lib/aiError.js";
 import { downloadImage, type MediaType } from "../lib/imageDownload.js";
 import { BODY_ANALYSIS_MODEL, analyzeBodyPhoto } from "../lib/bodyAnalysis.js";
 
@@ -114,18 +115,15 @@ bodyPhotosRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
     return;
   }
 
-  // Analyze inline. If it fails (e.g. missing API key), keep the saved photo and
-  // report the failure so the client can retry via POST /:id/analyze.
+  // Analyze inline. If it fails (e.g. no credits), keep the saved photo and
+  // report why, so the client can retry via POST /:id/analyze.
   try {
     const updated = await runAnalysis(req.userId!, row);
     res.status(201).json(toBodyPhoto(updated));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    const analysisError = message.includes("ANTHROPIC_API_KEY is not set")
-      ? "AI analysis is not configured (missing API key)."
-      : "Analysis failed — you can retry.";
-    console.error("Body photo analysis failed:", message);
-    res.status(201).json({ ...toBodyPhoto(row), analysisError });
+    const info = classifyAiError(err);
+    console.error(`Body photo analysis failed [${info.label}]:`, err);
+    res.status(201).json({ ...toBodyPhoto(row), analysisError: info.message });
   }
 });
 
@@ -150,13 +148,9 @@ bodyPhotosRouter.post("/:id/analyze", aiRateLimit, async (req: AuthedRequest, re
     const updated = await runAnalysis(req.userId!, row);
     res.json(toBodyPhoto(updated));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("ANTHROPIC_API_KEY is not set")) {
-      res.status(503).json({ error: "AI analysis is not configured (missing API key)." });
-      return;
-    }
-    console.error("Body photo analysis failed:", message);
-    res.status(502).json({ error: "Analysis failed." });
+    const info = classifyAiError(err);
+    console.error(`Body photo analysis failed [${info.label}]:`, err);
+    res.status(info.status).json({ error: info.message });
   }
 });
 
