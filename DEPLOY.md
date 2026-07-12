@@ -2,60 +2,83 @@
 
 The app is two deployable pieces plus Supabase:
 
-- **API** (`apps/api`) — a Node web service.
-- **Web** (`apps/web`) — a static PWA build.
-- **Supabase** — Postgres + Auth + Storage (already set up per the README).
+- **Web** (`apps/web`) — a static PWA build, hosted on **GitHub Pages**
+  (`.github/workflows/deploy-pages.yml`, deploys automatically on push to `main`).
+- **API** (`apps/api`) — a Node web service that holds the two secrets that can
+  never reach the browser (`SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`).
+  Deployed here via the **Render** blueprint (`render.yaml`); the pieces work
+  the same on Fly/Railway/a VPS if you'd rather not use Render.
+- **Supabase** — Postgres + Auth + Storage (set up per the README).
 
-`render.yaml` is a ready-made [Render](https://render.com) blueprint for both.
-Alternatively, the web app can be hosted for free on **GitHub Pages** (see § 6)
-— but the API still needs to run *somewhere* (Render, Fly, Railway, a VPS) for
-anything beyond login/signup to work, since Pages only serves static files.
+Auth (login/signup) runs entirely client-side against Supabase, so the web app
+works on its own. Every other feature (progress, photos, food log,
+recommendations, coach) calls the API, so those stay broken until it's deployed.
 
 ## 1. Prerequisites
 
 - Supabase project with all migrations in `supabase/migrations/` applied and the
   two private storage buckets created (see README).
 - An `ANTHROPIC_API_KEY` from https://console.anthropic.com.
+- The web app already deployed to GitHub Pages (see § 3) — you need that URL for
+  `WEB_ORIGIN` below.
 
-## 2. Deploy with the Render blueprint
+## 2. Deploy the API on Render
 
-1. Push this repo to GitHub (done if you're reading this there).
-2. In Render: **New → Blueprint**, point it at the repo. It reads `render.yaml`
-   and proposes two services: `health-tracker-api` and `health-tracker-web`.
-3. Set the environment variables it marks as required:
-
-   **health-tracker-api**
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY` — server-only secret; never expose to the client
+1. Go to https://render.com, sign in (GitHub login is easiest), and connect the
+   `health-tracker` repo if prompted.
+2. **New → Blueprint**, select the repo. Render reads `render.yaml` and proposes
+   one service: `health-tracker-api`.
+3. Fill in the env vars it marks as required:
+   - `SUPABASE_URL` — Project Settings → API in your Supabase dashboard
+   - `SUPABASE_SERVICE_ROLE_KEY` — same page, the **secret** key (never expose
+     this to the browser — it bypasses row-level security)
    - `ANTHROPIC_API_KEY`
-   - `WEB_ORIGIN` — the web service's URL, e.g. `https://health-tracker-web.onrender.com`
+   - `WEB_ORIGIN` — your GitHub Pages **origin only**, no path, no trailing
+     slash: `https://<your-username>.github.io` (not
+     `https://<your-username>.github.io/health-tracker/`)
+4. Deploy. First build takes a few minutes. Render gives you a URL like
+   `https://health-tracker-api.onrender.com` — copy it.
+5. Confirm it's alive: open `<that-url>/health` in a browser, expect
+   `{"status":"ok"}`.
 
-   **health-tracker-web** (these are baked in at build time)
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_API_URL` — the API service's URL, e.g. `https://health-tracker-api.onrender.com`
+**Free-tier note:** Render's free web services spin down after 15 minutes of no
+traffic and take up to ~50s to wake on the next request. The first API call
+after idle will feel slow (or time out and need a retry) — this is expected on
+the free plan, not a bug.
 
-4. Deploy. The API exposes `/health` for the health check.
+## 3. Point the web app at the deployed API
 
-> **Chicken-and-egg URLs:** the API needs `WEB_ORIGIN` and the web needs
-> `VITE_API_URL`, but you only learn each URL after the first deploy. Deploy
-> once to get the URLs, set the two cross-referencing vars, then redeploy. The
-> web service in particular must be **rebuilt** after `VITE_API_URL` changes,
-> since Vite inlines it at build time.
+1. Repo → Settings → Secrets and variables → Actions → edit (or add)
+   `VITE_API_URL` → paste the Render URL from step 2.4.
+2. Re-run the Pages deploy: push anything to `main`, or go to the **Actions**
+   tab → "Deploy web app to GitHub Pages" → **Run workflow**. `VITE_*` values
+   are baked in at build time, so this rebuild is required — editing the
+   secret alone doesn't update the live site.
 
-## 3. CORS
+## 4. CORS
 
-The API only accepts requests from `WEB_ORIGIN` (see `apps/api/src/index.ts`). If
-the browser reports a CORS error, `WEB_ORIGIN` doesn't match the origin the app
-is actually served from — fix it and redeploy the API.
+The API only accepts requests from `WEB_ORIGIN` (see `apps/api/src/index.ts`).
+A CORS error in the browser console means `WEB_ORIGIN` doesn't exactly match
+the page's origin — fix it on Render and it takes effect on the next deploy
+(Render auto-redeploys when you change an env var).
 
-## 4. Supabase auth redirect
+## 5. Supabase auth redirect
 
-In the Supabase dashboard → Authentication → URL Configuration, add your deployed
-web URL to the allowed redirect URLs so email confirmation links work in
-production.
+Supabase dashboard → Authentication → URL Configuration → add your GitHub
+Pages URL to the allowed redirect URLs, so any email-based auth link points
+back to the live site instead of `localhost`.
 
-## 5. Cost & rate limiting notes
+> **Known caveat:** the web app uses `HashRouter` for GitHub Pages compatibility
+> (§ "GitHub Pages" below), and Supabase's default auth flow also puts session
+> tokens in the URL hash on email-confirmation / password-reset links. The two
+> can collide. Practical workaround for now: keep **Confirm email** off
+> (Authentication → Providers → Email), as already suggested in the README —
+> that avoids the collision entirely since no hash-based link is ever sent. If
+> you need email confirmation or password reset in production, that requires
+> switching Supabase to PKCE flow (query-param based, no hash), which isn't
+> done yet — flagging as a follow-up rather than shipping it unverified.
+
+## 6. Cost & rate limiting notes
 
 - Each user has an in-memory AI-spend cap (40 model calls/hour) enforced in
   `apps/api/src/middleware/rateLimit.ts`. This is **per API instance** — if you
@@ -74,35 +97,26 @@ production.
   The photo/assessment calls are the expensive ones. If cost is a concern before
   quality is validated, drop those to `medium` first.
 
-## 6. GitHub Pages (free static hosting for the web app)
+## 7. GitHub Pages (web app hosting)
 
 `.github/workflows/deploy-pages.yml` builds `apps/web` and deploys it to Pages
-automatically on every push to `main`. What it needs from you, once:
+automatically on every push to `main`. One-time setup:
 
 1. **Enable Pages**: repo → Settings → Pages → *Build and deployment* → Source
-   → **GitHub Actions**. (Not "Deploy from a branch" — the workflow handles
-   publishing itself.)
+   → **GitHub Actions**. (Not "Deploy from a branch.")
 2. **Add repository secrets**: repo → Settings → Secrets and variables →
    Actions → New repository secret:
-   - `VITE_SUPABASE_URL` — your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY` — the Supabase **anon/publishable** key (safe to
-     expose client-side; it's gated by row-level security, not secrecy — never
-     put the `service_role` key here)
-   - `VITE_API_URL` — your deployed API's URL (e.g. from step 2 above). If you
-     haven't deployed the API yet, leave this unset for now: the site will
-     still load and login/signup will work (Supabase auth runs entirely
-     client-side), but every data/AI feature will show a fetch error until
-     it's set and the workflow re-runs.
-3. Push to `main` (or run the workflow manually from the Actions tab). The site
-   publishes to `https://<your-username>.github.io/health-tracker/`.
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY` — the **anon/publishable** key (safe to expose
+     client-side, gated by row-level security — never the `service_role` key)
+   - `VITE_API_URL` — set once the API is deployed (§ 2–3)
+3. Push to `main` (or run the workflow manually). Publishes to
+   `https://<your-username>.github.io/health-tracker/`.
 
 Notes:
-- The build sets `GH_PAGES=true`, which switches the Vite `base` to
-  `/health-tracker/` so assets resolve under the repo subpath (see
-  `apps/web/vite.config.ts`). Don't set this locally.
-- Routing uses `HashRouter` (URLs look like `.../#/progress`), not
-  `BrowserRouter` — GitHub Pages has no server-side rewrites, so a plain path
-  route 404s on refresh; hash routes always resolve to `index.html`.
-- Changing a `VITE_*` secret doesn't retroactively update the live site — it
-  only takes effect on the next workflow run (push to `main`, or re-run the
-  workflow manually).
+- Build sets `GH_PAGES=true`, switching the Vite `base` to `/health-tracker/`
+  so assets resolve under the repo subpath. Don't set this locally.
+- Routing uses `HashRouter` (URLs look like `.../#/progress`) — GitHub Pages
+  has no server-side rewrites, so a plain path route 404s on refresh; hash
+  routes always resolve to `index.html`. See § 5 for the auth-redirect caveat
+  this creates.
