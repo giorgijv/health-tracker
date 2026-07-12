@@ -2,6 +2,7 @@ import { FOOD_PHOTOS_BUCKET, sumFoodItems, type FoodItem } from "@health-tracker
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { downloadImage } from "../lib/imageDownload.js";
 import { FOOD_ANALYSIS_MODEL, analyzeFoodPhoto } from "../lib/foodAnalysis.js";
@@ -39,7 +40,7 @@ function ownsPath(userId: string, storagePath: string): boolean {
 // --- then calls POST / to persist. ---
 const analyzeSchema = z.object({ storagePath: z.string().min(1) });
 
-foodLogsRouter.post("/analyze", async (req: AuthedRequest, res) => {
+foodLogsRouter.post("/analyze", aiRateLimit, async (req: AuthedRequest, res) => {
   const parsed = analyzeSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });

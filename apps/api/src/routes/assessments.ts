@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import {
   ASSESSMENT_MODEL,
@@ -82,7 +83,7 @@ const createAssessmentSchema = z.object({
   intake: intakeSchema,
 });
 
-assessmentsRouter.post("/", async (req: AuthedRequest, res) => {
+assessmentsRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
   const parsed = createAssessmentSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -137,7 +138,7 @@ assessmentsRouter.post("/", async (req: AuthedRequest, res) => {
 
 // Periodic re-assessment: no questionnaire — pulls tracked history and the
 // previous assessment automatically.
-assessmentsRouter.post("/periodic", async (req: AuthedRequest, res) => {
+assessmentsRouter.post("/periodic", aiRateLimit, async (req: AuthedRequest, res) => {
   const { data: prevRow } = await supabaseAdmin
     .from("assessments")
     .select("id, summary_json")

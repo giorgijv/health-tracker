@@ -1002,3 +1002,122 @@ body {
 .assessment .level .pill {
   margin-left: 0.5rem;
 }
+
+/* ---- Dashboard home + settings (step 10) ---- */
+
+.dashboard-home {
+  width: 100%;
+  max-width: 680px;
+  padding: 2rem 1rem;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.home-header h1 {
+  margin: 0;
+}
+
+.settings-link {
+  font-size: 0.9rem;
+}
+
+.greeting {
+  color: #52514e;
+  margin: 0.25rem 0 1.5rem;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(11, 11, 11, 0.12);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.05s;
+}
+
+.feature-card:hover {
+  border-color: #2a78d6;
+}
+
+.feature-card:active {
+  transform: translateY(1px);
+}
+
+.feature-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.feature-desc {
+  font-size: 0.85rem;
+  color: #52514e;
+}
+
+.settings {
+  width: 100%;
+  max-width: 560px;
+  padding: 2rem 1rem;
+}
+
+.settings section {
+  margin: 1.5rem 0;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(11, 11, 11, 0.1);
+}
+
+.settings h2 {
+  font-size: 1.05rem;
+}
+
+.settings .danger {
+  border: 1px solid #f3c6c6;
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgba(220, 38, 38, 0.04);
+}
+
+.settings .danger label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+  max-width: 220px;
+}
+
+.settings .delete-account {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.settings .delete-account:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .feature-desc,
+  .greeting {
+    color: #b9b8b0;
+  }
+  .feature-card {
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+}

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
+import { accountRouter } from "./routes/account.js";
 import { assessmentsRouter } from "./routes/assessments.js";
 import { bodyPhotosRouter } from "./routes/bodyPhotos.js";
 import { chatRouter } from "./routes/chat.js";
@@ -26,6 +27,7 @@ app.use("/api/body-photos", bodyPhotosRouter);
 app.use("/api/food-logs", foodLogsRouter);
 app.use("/api/recommendations", recommendationsRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/account", accountRouter);
 
 const port = Number(process.env.PORT ?? 8787);
 app.listen(port, () => {

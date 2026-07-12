@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { formatContext, gatherUserContext } from "../lib/userContext.js";
 import { RECOMMENDATIONS_MODEL, generateRecommendations } from "../lib/recommendations.js";
@@ -24,7 +25,7 @@ function toRecommendation(row: Record<string, unknown>) {
   };
 }
 
-recommendationsRouter.post("/generate", async (req: AuthedRequest, res) => {
+recommendationsRouter.post("/generate", aiRateLimit, async (req: AuthedRequest, res) => {
   const context = await gatherUserContext(req.userId!);
 
   let output;

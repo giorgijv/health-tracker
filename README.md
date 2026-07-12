@@ -3,16 +3,30 @@
 Personal health & fitness tracking app: assessment, recommendations, progress
 tracking, and photo-based feedback (body composition + food/calories).
 
-See `/tmp` plan doc shared in chat for the full 10-step build plan. This repo
-currently implements **Step 1: scaffolding + auth**.
+## Features
+
+- **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
+- **Assessment** — AI intake assessment and periodic re-assessments with a
+  "how far you've come" progress read (`claude-opus-4-8`).
+- **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
+- **Body photos** — private uploads with AI visual analysis vs. prior photos.
+- **Food log** — snap a meal → AI calorie/macro estimate you edit before logging.
+- **Recommendations** — prioritized, data-grounded advice synthesized from your logs.
+- **Coach chat** — multi-turn Q&A over your data, plus short proactive nudges (`claude-haiku-4-5`).
+- **Privacy** — private photo storage, signed-URL access, and full account/data deletion.
+
+All AI features degrade gracefully without an `ANTHROPIC_API_KEY` (they return a
+clear "not configured" error; everything else keeps working). AI endpoints are
+per-user rate-limited to cap spend.
 
 ## Structure
 
 ```
-apps/api      Express + TypeScript backend (Supabase-backed auth, REST API)
-apps/web      React + Vite PWA frontend
-packages/shared  Shared TypeScript types
-supabase/migrations  SQL migrations (schema + row-level security)
+apps/api             Express + TypeScript backend (Supabase auth, REST API, AI calls)
+apps/web             React + Vite PWA frontend
+packages/shared      Shared TypeScript types
+supabase/migrations  SQL migrations (schema + row-level security + storage buckets)
+render.yaml, DEPLOY.md   Deployment blueprint & guide
 ```
 
 ## Setup

@@ -2,6 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { formatContext, gatherUserContext } from "../lib/userContext.js";
 import { chatReply, generateNudge } from "../lib/chat.js";
@@ -48,7 +49,7 @@ chatRouter.get("/", async (req: AuthedRequest, res) => {
 
 const sendSchema = z.object({ message: z.string().min(1).max(4000) });
 
-chatRouter.post("/", async (req: AuthedRequest, res) => {
+chatRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
   const parsed = sendSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -105,7 +106,7 @@ chatRouter.post("/", async (req: AuthedRequest, res) => {
   });
 });
 
-chatRouter.post("/nudge", async (req: AuthedRequest, res) => {
+chatRouter.post("/nudge", aiRateLimit, async (req: AuthedRequest, res) => {
   try {
     const context = formatContext(await gatherUserContext(req.userId!));
     const nudge = await generateNudge(context);

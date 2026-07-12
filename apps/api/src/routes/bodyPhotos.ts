@@ -2,6 +2,7 @@ import { BODY_PHOTOS_BUCKET } from "@health-tracker/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { aiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { downloadImage, type MediaType } from "../lib/imageDownload.js";
 import { BODY_ANALYSIS_MODEL, analyzeBodyPhoto } from "../lib/bodyAnalysis.js";
@@ -81,7 +82,7 @@ const createSchema = z.object({
   takenAt: z.string().datetime().optional(),
 });
 
-bodyPhotosRouter.post("/", async (req: AuthedRequest, res) => {
+bodyPhotosRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -128,7 +129,7 @@ bodyPhotosRouter.post("/", async (req: AuthedRequest, res) => {
   }
 });
 
-bodyPhotosRouter.post("/:id/analyze", async (req: AuthedRequest, res) => {
+bodyPhotosRouter.post("/:id/analyze", aiRateLimit, async (req: AuthedRequest, res) => {
   const { data: row, error } = await supabaseAdmin
     .from("body_photos")
     .select("*")
