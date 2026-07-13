@@ -71,6 +71,8 @@ export function App() {
           </RequireAuth>
         }
       />
+      {/* Catches old links/bookmarks to removed pages (/assessment, /recommendations, /coach). */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
