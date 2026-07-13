@@ -4,6 +4,7 @@ import {
   latestWithDelta,
   metricSeries,
   weeklyGoalProgress,
+  weeklyGoalTotals,
   weeklyWorkoutCounts,
   weightSeries,
   workoutsInLastDays,
@@ -26,6 +27,7 @@ const workout = (overrides: Partial<Workout>): Workout => ({
   userId: "u",
   date: "2026-01-01",
   type: "Run",
+  count: 1,
   durationMin: null,
   notes: null,
   createdAt: "",
@@ -128,14 +130,34 @@ describe("weeklyWorkoutCounts", () => {
     expect(buckets.every((b) => b.count === 0)).toBe(true);
   });
 
-  it("filters by type case-insensitively when given", () => {
+  it("counts rows (sessions), not each entry's count field", () => {
     const workouts = [
-      workout({ date: "2026-07-09", type: "Run" }),
-      workout({ date: "2026-07-10", type: "run" }),
-      workout({ date: "2026-07-10", type: "Lift" }),
+      workout({ date: "2026-07-09", count: 50 }),
+      workout({ date: "2026-07-10", count: 10 }),
     ];
-    const buckets = weeklyWorkoutCounts(workouts, 1, now, "RUN");
+    const buckets = weeklyWorkoutCounts(workouts, 1, now);
+    // Two log entries this week, regardless of their count values — this is
+    // the "how many times did I work out" chart, not a sum.
     expect(buckets[0]).toMatchObject({ count: 2 });
+  });
+});
+
+describe("weeklyGoalTotals", () => {
+  const now = new Date("2026-07-11T12:00:00"); // a Saturday
+
+  it("filters by type case-insensitively and sums each entry's count", () => {
+    const workouts = [
+      workout({ date: "2026-07-09", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-10", type: "push ups", count: 15 }),
+      workout({ date: "2026-07-10", type: "Lift", count: 1 }),
+    ];
+    const buckets = weeklyGoalTotals(workouts, "PUSH UPS", 1, now);
+    expect(buckets[0]).toMatchObject({ count: 25 });
+  });
+
+  it("returns all-zero buckets when the type was never logged", () => {
+    const buckets = weeklyGoalTotals([], "Yoga", 4, now);
+    expect(buckets.every((b) => b.count === 0)).toBe(true);
   });
 });
 
@@ -149,6 +171,23 @@ describe("weeklyGoalProgress", () => {
       workout({ date: "2026-07-10", type: "Lift" }),
     ];
     expect(weeklyGoalProgress(workouts, "Run", 3, now)).toEqual({ count: 2, target: 3, pct: 67 });
+  });
+
+  it("sums repeated daily entries toward a reps-style goal (10/day -> 70% of 100)", () => {
+    const workouts = [
+      workout({ date: "2026-07-06", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-07", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-08", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-09", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-10", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-10", type: "Push ups", count: 10 }),
+      workout({ date: "2026-07-11", type: "Push ups", count: 10 }),
+    ];
+    expect(weeklyGoalProgress(workouts, "Push ups", 100, now)).toEqual({
+      count: 70,
+      target: 100,
+      pct: 70,
+    });
   });
 
   it("caps nothing — pct can exceed 100 when the goal is beaten", () => {

@@ -26,9 +26,15 @@ describe("createWorkoutGoalSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects an unreasonably large target", () => {
+  it("accepts a high target for reps-style goals (e.g. 1000 push-ups/week)", () => {
     expect(
-      createWorkoutGoalSchema.safeParse({ workoutType: "Run", targetPerWeek: 101 }).success,
+      createWorkoutGoalSchema.safeParse({ workoutType: "Push ups", targetPerWeek: 1000 }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a target above the ceiling", () => {
+    expect(
+      createWorkoutGoalSchema.safeParse({ workoutType: "Run", targetPerWeek: 1001 }).success,
     ).toBe(false);
   });
 });

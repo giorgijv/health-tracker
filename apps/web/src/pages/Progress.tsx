@@ -37,6 +37,7 @@ export function ProgressPage() {
   // workout form
   const [wDate, setWDate] = useState(today());
   const [wType, setWType] = useState("");
+  const [wCount, setWCount] = useState("");
   const [wDuration, setWDuration] = useState("");
   const [wNotes, setWNotes] = useState("");
 
@@ -87,16 +88,19 @@ export function ProgressPage() {
     e.preventDefault();
     setError(null);
     try {
+      const count = numOrNull(wCount);
       await apiFetch("/api/workouts", {
         method: "POST",
         body: JSON.stringify({
           date: wDate,
           type: wType,
+          ...(count != null && { count }),
           durationMin: numOrNull(wDuration),
           notes: wNotes.trim() || null,
         }),
       });
       setWType("");
+      setWCount("");
       setWDuration("");
       setWNotes("");
       await load();
@@ -225,6 +229,16 @@ export function ProgressPage() {
             </label>
           </div>
           <label>
+            Count (optional — e.g. 10 push-ups)
+            <input
+              type="number"
+              min={1}
+              placeholder="1"
+              value={wCount}
+              onChange={(e) => setWCount(e.target.value)}
+            />
+          </label>
+          <label>
             Notes
             <input type="text" value={wNotes} onChange={(e) => setWNotes(e.target.value)} />
           </label>
@@ -239,7 +253,10 @@ export function ProgressPage() {
             {workouts.slice(0, 10).map((w) => (
               <li key={w.id}>
                 <span className="w-date">{w.date}</span>
-                <span className="w-type">{w.type}</span>
+                <span className="w-type">
+                  {w.type}
+                  {w.count > 1 && ` ×${w.count}`}
+                </span>
                 {w.durationMin != null && <span className="w-dur">{w.durationMin} min</span>}
               </li>
             ))}

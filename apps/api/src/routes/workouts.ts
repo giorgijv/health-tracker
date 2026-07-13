@@ -13,6 +13,7 @@ function toWorkout(row: Record<string, unknown>) {
     userId: row.user_id,
     date: row.date,
     type: row.type,
+    count: row.count,
     durationMin: row.duration_min,
     notes: row.notes,
     createdAt: row.created_at,
@@ -46,13 +47,14 @@ workoutsRouter.post("/", async (req: AuthedRequest, res) => {
     return;
   }
 
-  const { date, type, durationMin, notes } = parsed.data;
+  const { date, type, count, durationMin, notes } = parsed.data;
   const { data, error } = await supabaseAdmin
     .from("workouts")
     .insert({
       user_id: req.userId,
       date,
       type,
+      count: count ?? 1,
       duration_min: durationMin,
       notes,
     })
@@ -73,12 +75,13 @@ workoutsRouter.patch("/:id", async (req: AuthedRequest, res) => {
     return;
   }
 
-  const { date, type, durationMin, notes } = parsed.data;
+  const { date, type, count, durationMin, notes } = parsed.data;
   const { data, error } = await supabaseAdmin
     .from("workouts")
     .update({
       ...(date !== undefined && { date }),
       ...(type !== undefined && { type }),
+      ...(count !== undefined && { count }),
       ...(durationMin !== undefined && { duration_min: durationMin }),
       ...(notes !== undefined && { notes }),
     })

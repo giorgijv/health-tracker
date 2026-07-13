@@ -1582,3 +1582,49 @@ button.add-item {
 .goal-edit-target input {
   width: 6rem;
 }
+
+.goal-log-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.goal-log-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-log-form input {
+  width: 100%;
+}
+
+.goal-achievements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.goal-achievements li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.goal-achievement-date {
+  color: var(--text-secondary);
+}
+
+.goal-achievement-count {
+  font-weight: 600;
+  margin-left: auto;
+}

@@ -32,6 +32,9 @@ export interface Workout {
   userId: string;
   date: string;
   type: string;
+  /** How many units this entry represents (e.g. 10 push-ups). Defaults to 1
+   * for plain session-style workouts — weekly goal progress sums this. */
+  count: number;
   durationMin: number | null;
   notes: string | null;
   createdAt: string;

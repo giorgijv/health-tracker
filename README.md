@@ -9,9 +9,10 @@ project.
 
 - **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
 - **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
-- **Weekly goals** — set a weekly target per workout type (e.g. "Run" x3/week);
-  track this week's count as a percentage achieved, with an 8-week trend chart
-  per goal.
+- **Weekly goals** — set a weekly target per workout type, up to 1000 (e.g.
+  "Push ups" x100/week, "Run" x3/week). Log progress per goal as you go — each
+  entry's count sums toward the week's total (10 today + 10 tomorrow = 20/100)
+  — and track it as a percentage achieved, with an 8-week trend chart per goal.
 - **Body photos** — a private visual timeline of your progress (upload only —
   compare them yourself over time).
 - **Food log** — log meals and macros by hand.
@@ -31,7 +32,7 @@ render.yaml, DEPLOY.md   Deployment blueprint & guide
 
 1. **Create a Supabase project** at https://supabase.com/dashboard — free tier is fine.
 2. In the Supabase SQL editor, run each migration in `supabase/migrations/` in
-   order (`0001_init.sql` … `0009_workout_goals.sql`). `0004` also
+   order (`0001_init.sql` … `0010_workout_count_and_higher_goal_max.sql`). `0004` also
    creates a private storage bucket (`body-photos`, still used for the
    photo-timeline feature) and its access policies; `0005` creates
    `food-photos` too — that bucket is unused by the app now (food logging is

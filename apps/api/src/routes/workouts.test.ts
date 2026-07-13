@@ -39,4 +39,35 @@ describe("createWorkoutSchema", () => {
       createWorkoutSchema.safeParse({ date: "2026-07-11", type: "Run", notes: null }).success,
     ).toBe(true);
   });
+
+  it("allows count to be omitted (defaults to 1 at the route level)", () => {
+    expect(createWorkoutSchema.safeParse({ date: "2026-07-11", type: "Push ups" }).success).toBe(
+      true,
+    );
+  });
+
+  it("accepts a large count for reps-style entries", () => {
+    const result = createWorkoutSchema.safeParse({
+      date: "2026-07-11",
+      type: "Push ups",
+      count: 100,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a zero or negative count", () => {
+    expect(
+      createWorkoutSchema.safeParse({ date: "2026-07-11", type: "Push ups", count: 0 }).success,
+    ).toBe(false);
+    expect(
+      createWorkoutSchema.safeParse({ date: "2026-07-11", type: "Push ups", count: -5 }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a count above the ceiling", () => {
+    expect(
+      createWorkoutSchema.safeParse({ date: "2026-07-11", type: "Push ups", count: 100001 })
+        .success,
+    ).toBe(false);
+  });
 });

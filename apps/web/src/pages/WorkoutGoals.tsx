@@ -4,11 +4,23 @@ import { Link } from "react-router-dom";
 import { ActivityRing } from "../components/ActivityRing";
 import { BarChart } from "../components/BarChart";
 import { apiFetch } from "../lib/api";
-import { weeklyGoalProgress, weeklyWorkoutCounts } from "../lib/progress";
+import { weeklyGoalProgress, weeklyGoalTotals } from "../lib/progress";
 
 // Fixed order, cycled if there are more goals than colors — never reassigned
 // by value/rank (identity stays with creation order).
 const SERIES_VARS = ["--series-1", "--series-2", "--series-3", "--series-4"];
+const TARGET_MAX = 1000;
+const COUNT_MAX = 100000;
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Parses a bare "YYYY-MM-DD" as local midnight, avoiding UTC-parse day-shift. */
+function formatDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export function WorkoutGoalsPage() {
   const [goals, setGoals] = useState<WorkoutGoal[]>([]);
@@ -22,6 +34,8 @@ export function WorkoutGoalsPage() {
 
   // goalId -> draft target text while its inline editor is open.
   const [editing, setEditing] = useState<Record<string, string>>({});
+  // goalId -> draft "log progress" amount text.
+  const [logDraft, setLogDraft] = useState<Record<string, string>>({});
 
   async function load() {
     setLoading(true);
@@ -95,12 +109,38 @@ export function WorkoutGoalsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDeleteGoal(id: string) {
     try {
       await apiFetch(`/api/workout-goals/${id}`, { method: "DELETE" });
       setGoals((prev) => prev.filter((g) => g.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete goal");
+    }
+  }
+
+  async function logProgress(goal: WorkoutGoal) {
+    const n = Math.round(Number(logDraft[goal.id]));
+    if (!Number.isFinite(n) || n < 1) return;
+
+    setError(null);
+    try {
+      const created = await apiFetch<Workout>("/api/workouts", {
+        method: "POST",
+        body: JSON.stringify({ date: today(), type: goal.workoutType, count: n }),
+      });
+      setWorkouts((prev) => [created, ...prev]);
+      setLogDraft((prev) => ({ ...prev, [goal.id]: "" }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to log progress");
+    }
+  }
+
+  async function deleteEntry(id: string) {
+    try {
+      await apiFetch(`/api/workouts/${id}`, { method: "DELETE" });
+      setWorkouts((prev) => prev.filter((w) => w.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete entry");
     }
   }
 
@@ -123,8 +163,8 @@ export function WorkoutGoalsPage() {
       </p>
       <h1>Weekly goals</h1>
       <p className="lead">
-        Set a weekly target for each kind of workout — a count you log under Progress counts
-        toward it automatically.
+        Set a weekly target for each kind of workout, then log progress as you go — each entry's
+        count adds to the week's total (10 push-ups today + 10 tomorrow = 20 toward the goal).
       </p>
 
       {error && <p className="error">{error}</p>}
@@ -159,7 +199,7 @@ export function WorkoutGoalsPage() {
                 type="text"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                placeholder="Run, Lift, Yoga…"
+                placeholder="Run, Lift, Push ups…"
                 required
               />
             </label>
@@ -168,7 +208,7 @@ export function WorkoutGoalsPage() {
               <input
                 type="number"
                 min={1}
-                max={100}
+                max={TARGET_MAX}
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 required
@@ -180,15 +220,19 @@ export function WorkoutGoalsPage() {
           </form>
 
           {progress.length === 0 ? (
-            <p>No goals yet. Add one above — e.g. "Run" x3 per week.</p>
+            <p>No goals yet. Add one above — e.g. "Push ups" x100 per week.</p>
           ) : (
             <div className="goals-grid">
               {progress.map(({ goal, colorVar, count, target: goalTarget, pct }) => {
-                const trend = weeklyWorkoutCounts(workouts, 8, now, goal.workoutType).map((b) => ({
+                const trend = weeklyGoalTotals(workouts, goal.workoutType, 8, now).map((b) => ({
                   label: b.label,
                   value: b.count,
                 }));
                 const draft = editing[goal.id];
+                const recent = workouts
+                  .filter((w) => w.type.toLowerCase() === goal.workoutType.toLowerCase())
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .slice(0, 5);
 
                 return (
                   <div className="goal-card" key={goal.id}>
@@ -197,7 +241,7 @@ export function WorkoutGoalsPage() {
                         <span className="series-dot" style={{ background: `var(${colorVar})` }} />
                         {goal.workoutType}
                       </span>
-                      <button className="delete" onClick={() => handleDelete(goal.id)}>
+                      <button className="delete" onClick={() => handleDeleteGoal(goal.id)}>
                         Delete
                       </button>
                     </div>
@@ -218,7 +262,7 @@ export function WorkoutGoalsPage() {
                             <input
                               type="number"
                               min={1}
-                              max={100}
+                              max={TARGET_MAX}
                               value={draft}
                               onChange={(e) =>
                                 setEditing((prev) => ({ ...prev, [goal.id]: e.target.value }))
@@ -239,11 +283,52 @@ export function WorkoutGoalsPage() {
                       )}
                     </div>
 
+                    <form
+                      className="goal-log-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        logProgress(goal);
+                      }}
+                    >
+                      <label>
+                        Log progress (today)
+                        <input
+                          type="number"
+                          min={1}
+                          max={COUNT_MAX}
+                          placeholder="e.g. 10"
+                          value={logDraft[goal.id] ?? ""}
+                          onChange={(e) =>
+                            setLogDraft((prev) => ({ ...prev, [goal.id]: e.target.value }))
+                          }
+                        />
+                      </label>
+                      <button type="submit">Log</button>
+                    </form>
+
+                    {recent.length > 0 && (
+                      <ul className="goal-achievements">
+                        {recent.map((w) => (
+                          <li key={w.id}>
+                            <span className="goal-achievement-date">{formatDate(w.date)}</span>
+                            <span className="goal-achievement-count">+{w.count}</span>
+                            <button
+                              className="row-remove"
+                              onClick={() => deleteEntry(w.id)}
+                              aria-label="Delete entry"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
                     <BarChart
                       data={trend}
                       height={140}
                       ariaLabel={`${goal.workoutType} per week`}
-                      emptyMessage={`No ${goal.workoutType} workouts logged yet.`}
+                      emptyMessage={`No ${goal.workoutType} logged yet.`}
                       colorVar={colorVar}
                     />
                   </div>
