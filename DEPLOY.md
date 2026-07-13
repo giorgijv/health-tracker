@@ -4,26 +4,26 @@ The app is two deployable pieces plus Supabase:
 
 - **Web** (`apps/web`) — a static PWA build, hosted on **GitHub Pages**
   (`.github/workflows/deploy-pages.yml`, deploys automatically on push to `main`).
-- **API** (`apps/api`) — a Node web service that holds the two secrets that can
-  never reach the browser (`SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`).
-  Deployed here via the **Render** blueprint (`render.yaml`); the pieces work
-  the same on Fly/Railway/a VPS if you'd rather not use Render.
+- **API** (`apps/api`) — a Node web service that holds the one secret that can
+  never reach the browser (`SUPABASE_SERVICE_ROLE_KEY`). Deployed here via
+  the **Render** blueprint (`render.yaml`); the pieces work the same on
+  Fly/Railway/a VPS if you'd rather not use Render.
 - **Supabase** — Postgres + Auth + Storage (set up per the README).
 
 Auth (login/signup) runs entirely client-side against Supabase, so the web app
-works on its own. Every other feature (progress, photos, food log,
-recommendations, coach) calls the API, so those stay broken until it's deployed.
+works on its own. Every other feature (progress, photos, food log) calls the
+API, so those stay broken until it's deployed.
 
-**No photo analysis:** body/food photos are never sent to Claude — body
-photos are a private visual timeline only, and food logging is text-only
-(no photo). This was a deliberate cost cut; see § 6 for what still calls the
-model.
+**No AI, no third-party API calls at all.** The app was originally built with
+Claude-powered assessments, recommendations, a coach chat, and photo
+analysis. All of it has been removed — there's no `ANTHROPIC_API_KEY`, no
+rate limiter, no AI error handling, nothing to configure or pay for beyond
+Supabase and (optionally) Render. The app is pure data entry + charts.
 
 ## 1. Prerequisites
 
 - Supabase project with all migrations in `supabase/migrations/` applied and the
   two private storage buckets created (see README).
-- An `ANTHROPIC_API_KEY` from https://console.anthropic.com.
 - The web app already deployed to GitHub Pages (see § 3) — you need that URL for
   `WEB_ORIGIN` below.
 
@@ -37,7 +37,6 @@ model.
    - `SUPABASE_URL` — Project Settings → API in your Supabase dashboard
    - `SUPABASE_SERVICE_ROLE_KEY` — same page, the **secret** key (never expose
      this to the browser — it bypasses row-level security)
-   - `ANTHROPIC_API_KEY`
    - `WEB_ORIGIN` — your GitHub Pages **origin only**, no path, no trailing
      slash: `https://<your-username>.github.io` (not
      `https://<your-username>.github.io/health-tracker/`)
@@ -85,15 +84,9 @@ back to the live site instead of `localhost`.
 
 ## 6. Reliability notes
 
-- **Transient AI failures (network blips, 429/5xx from Anthropic)**: already
-  handled — the Anthropic SDK retries these automatically (2 retries with
-  backoff, out of the box). No custom retry code needed or added.
-- **Rate limiting**: each user has an in-memory AI-spend cap (40 model
-  calls/hour) enforced in `apps/api/src/middleware/rateLimit.ts`. This is
-  **per API instance** and resets on restart — fine for the current single
-  free-tier Render instance. If you ever scale to multiple instances, move it
-  to a shared store (e.g. Redis) so the budget is global. Not done now —
-  premature for current scale.
+- **No AI dependency**: nothing in the app calls an external model API, so
+  there's no rate limiting, no AI-error handling, and no spend to monitor —
+  the only external dependency is Supabase itself.
 - **Error visibility**: failures currently only show up in Render's server
   logs (`console.error` calls throughout the route handlers) — there's no
   external error tracking (e.g. Sentry) wired up. That's a deliberate gap,
@@ -101,25 +94,12 @@ back to the live site instead of `localhost`.
   as Supabase and Render did. Worth doing before real users depend on this,
   not required to keep building.
 - **Automated tests**: `npm test` (vitest) covers the pure logic and
-  validation schemas — see README § Testing. Route handlers and the actual
-  Claude API calls aren't covered by automated tests; they were verified
-  manually during each build step (auth-gating, server boot, production
-  builds) but that verification doesn't run again on future changes. Real
-  regression coverage there would need integration tests against a live (or
-  dockerized) Supabase instance — not set up yet.
-- Model/effort choices per feature (tune in the respective `lib/*.ts`). There
-  is no vision/photo-analysis call anywhere in the app — every AI call below
-  is text-only:
-  | Feature | Model | Effort |
-  |---|---|---|
-  | Initial & periodic assessment | `claude-opus-4-8` | medium |
-  | Recommendations | `claude-opus-4-8` | medium |
-  | Coach chat | `claude-opus-4-8` | medium |
-  | Nudges | `claude-haiku-4-5` | (n/a — Haiku) |
-
-  These are all low-frequency (assessments) or naturally rate-limited by usage
-  (chat, recommendations) — the 40 calls/hour shared budget above is the
-  practical ceiling on spend now that photo analysis is gone.
+  validation schemas — see README § Testing. Route handlers aren't covered by
+  automated tests; they were verified manually during each build step
+  (auth-gating, server boot, production builds) but that verification
+  doesn't run again on future changes. Real regression coverage there would
+  need integration tests against a live (or dockerized) Supabase instance —
+  not set up yet.
 
 ## 7. GitHub Pages (web app hosting)
 

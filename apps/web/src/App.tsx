@@ -1,15 +1,12 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
-import { AssessmentPage } from "./pages/Assessment";
 import { BodyPhotosPage } from "./pages/BodyPhotos";
-import { CoachPage } from "./pages/Coach";
 import { DashboardPage } from "./pages/Dashboard";
 import { FoodLogPage } from "./pages/FoodLog";
 import { LoginPage } from "./pages/Login";
 import { OnboardingPage } from "./pages/Onboarding";
 import { ProgressPage } from "./pages/Progress";
-import { RecommendationsPage } from "./pages/Recommendations";
 import { SettingsPage } from "./pages/Settings";
 import { SignupPage } from "./pages/Signup";
 
@@ -43,14 +40,6 @@ export function App() {
         }
       />
       <Route
-        path="/assessment"
-        element={
-          <RequireAuth>
-            <AssessmentPage />
-          </RequireAuth>
-        }
-      />
-      <Route
         path="/progress"
         element={
           <RequireAuth>
@@ -71,22 +60,6 @@ export function App() {
         element={
           <RequireAuth>
             <FoodLogPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/recommendations"
-        element={
-          <RequireAuth>
-            <RecommendationsPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/coach"
-        element={
-          <RequireAuth>
-            <CoachPage />
           </RequireAuth>
         }
       />

@@ -37,63 +37,7 @@ export interface Workout {
   createdAt: string;
 }
 
-export type AssessmentType = "initial" | "periodic";
-
-export interface AssessmentIntake {
-  age: number | null;
-  sex: "male" | "female" | "other" | null;
-  heightCm: number | null;
-  weightKg: number | null;
-  activityLevel: ActivityLevel | null;
-  goals: string[];
-  injuriesOrConditions: string;
-  currentExercise: string;
-  sleepHoursTypical: number | null;
-  dietNotes: string;
-}
-
-export interface AssessmentFocusArea {
-  title: string;
-  rationale: string;
-  priority: "high" | "medium" | "low";
-}
-
-/** The structured write-up Claude produces. */
-export interface AssessmentSummary {
-  narrative: string;
-  overallLevel: "beginner" | "intermediate" | "advanced";
-  focusAreas: AssessmentFocusArea[];
-  strengths: string[];
-  cautions: string[];
-  /** "How far you've come" — populated for periodic re-assessments, absent for initial. */
-  progressSinceLast?: string | null;
-}
-
-export interface Assessment {
-  id: string;
-  userId: string;
-  type: AssessmentType;
-  /** The questionnaire for initial assessments; null for auto-generated periodic ones. */
-  intake: AssessmentIntake | null;
-  summary: AssessmentSummary;
-  model: string;
-  createdAt: string;
-}
-
 export type BodyPhotoAngle = "front" | "side" | "back";
-
-/**
- * Qualitative visual read of a body photo. Explicitly NOT a measurement or
- * medical assessment — estimates are rough and confidence-flagged.
- */
-export interface BodyPhotoAnalysis {
-  observations: string[];
-  comparisonToPrevious: string | null;
-  estimatedBodyFatRange: string | null;
-  confidence: "low" | "medium" | "high";
-  cautions: string[];
-  encouragement: string;
-}
 
 export interface BodyPhoto {
   id: string;
@@ -101,8 +45,6 @@ export interface BodyPhoto {
   storagePath: string;
   angle: BodyPhotoAngle;
   takenAt: string;
-  analysis: BodyPhotoAnalysis | null;
-  model: string | null;
   createdAt: string;
 }
 
@@ -117,19 +59,6 @@ export interface FoodItem {
   proteinG: number;
   carbsG: number;
   fatG: number;
-}
-
-export interface NutritionalQuality {
-  rating: "poor" | "fair" | "good" | "excellent";
-  notes: string;
-}
-
-/** What the vision call returns before the user edits anything. */
-export interface FoodAnalysis {
-  items: FoodItem[];
-  confidence: "low" | "medium" | "high";
-  nutritionalQuality: NutritionalQuality;
-  cautions: string[];
 }
 
 export interface FoodTotals {
@@ -148,9 +77,6 @@ export interface FoodLog {
   mealType: MealType;
   items: FoodItem[];
   totals: FoodTotals;
-  confidence: "low" | "medium" | "high" | null;
-  nutritionalQuality: NutritionalQuality | null;
-  model: string | null;
   createdAt: string;
 }
 
@@ -167,49 +93,4 @@ export function sumFoodItems(items: FoodItem[]): FoodTotals {
     }),
     { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
   );
-}
-
-export type RecommendationCategory =
-  | "nutrition"
-  | "training"
-  | "recovery"
-  | "consistency"
-  | "measurement"
-  | "general";
-
-export type RecommendationPriority = "high" | "medium" | "low";
-export type RecommendationStatus = "active" | "done" | "dismissed";
-
-export interface Recommendation {
-  id: string;
-  userId: string;
-  runId: string;
-  category: RecommendationCategory;
-  title: string;
-  detail: string;
-  priority: RecommendationPriority;
-  /** The specific data point this is grounded in. */
-  basis: string;
-  status: RecommendationStatus;
-  createdAt: string;
-}
-
-/** One generation pass: a read of the data plus the recommendations it produced. */
-export interface RecommendationRun {
-  id: string;
-  userId: string;
-  summary: string;
-  model: string;
-  createdAt: string;
-  recommendations: Recommendation[];
-}
-
-export type ChatRole = "user" | "assistant";
-
-export interface ChatMessage {
-  id: string;
-  userId: string;
-  role: ChatRole;
-  content: string;
-  createdAt: string;
 }

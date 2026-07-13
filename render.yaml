@@ -16,8 +16,6 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
       # Your GitHub Pages origin — NO trailing path, NO trailing slash.
       # e.g. https://giorgijv.github.io
       - key: WEB_ORIGIN

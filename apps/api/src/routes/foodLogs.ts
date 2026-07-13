@@ -22,9 +22,6 @@ function toFoodLog(row: Record<string, unknown>) {
       carbsG: Number(row.total_carbs_g),
       fatG: Number(row.total_fat_g),
     },
-    confidence: row.confidence ?? null,
-    nutritionalQuality: row.nutritional_quality_json ?? null,
-    model: row.model ?? null,
     createdAt: row.created_at,
   };
 }

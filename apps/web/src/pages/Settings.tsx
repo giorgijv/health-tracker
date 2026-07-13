@@ -39,10 +39,10 @@ export function SettingsPage() {
       <section>
         <h2>Your privacy</h2>
         <p>
-          Your measurements, photos, food logs, and chats are private to your account. Body and food
-          photos are stored in a private bucket and are only ever shown to you through short-lived
-          links. Photos are sent to the AI model only to produce your analysis; nothing you log is
-          shared with other users.
+          Your measurements, photos, and food logs are private to your account. Body photos are
+          stored in a private bucket and are only ever shown to you through short-lived links.
+          Nothing you log is shared with other users, and nothing you log is sent anywhere outside
+          this app — there's no AI model involved.
         </p>
       </section>
 
@@ -50,8 +50,7 @@ export function SettingsPage() {
         <h2>Delete account</h2>
         <p>
           This permanently deletes your account and <strong>all</strong> of your data — profile,
-          measurements, workouts, assessments, photos, food logs, and chat history. This cannot be
-          undone.
+          measurements, workouts, photos, and food logs. This cannot be undone.
         </p>
         <label>
           Type <code>DELETE</code> to confirm

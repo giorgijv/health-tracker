@@ -3,8 +3,8 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
-type Step = "about" | "weight" | "assessment";
-const STEPS: Step[] = ["about", "weight", "assessment"];
+type Step = "about" | "weight" | "done";
+const STEPS: Step[] = ["about", "weight", "done"];
 
 type AboutForm = {
   age: string;
@@ -86,7 +86,7 @@ export function OnboardingPage() {
           body: JSON.stringify({ date: new Date().toISOString().slice(0, 10), weightKg: kg }),
         });
       }
-      setStep("assessment");
+      setStep("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save — try again");
     } finally {
@@ -127,8 +127,8 @@ export function OnboardingPage() {
         <>
           <h1>Welcome — let's set you up</h1>
           <p className="lead">
-            A little context helps your assessments, recommendations, and coach chat give you
-            better, more specific answers. Everything here is optional.
+            A little context helps your Progress charts make sense from day one. Everything here
+            is optional.
           </p>
           <form onSubmit={handleAboutSubmit}>
             <div className="row">
@@ -198,10 +198,7 @@ export function OnboardingPage() {
       {step === "weight" && (
         <>
           <h1>Log your starting weight</h1>
-          <p className="lead">
-            Optional, but it gives your Progress chart and future recommendations a baseline to
-            measure from.
-          </p>
+          <p className="lead">Optional, but it gives your Progress chart a baseline to measure from.</p>
           <form onSubmit={handleWeightSubmit}>
             <label>
               Weight (kg)
@@ -220,19 +217,15 @@ export function OnboardingPage() {
         </>
       )}
 
-      {step === "assessment" && (
+      {step === "done" && (
         <>
           <h1>You're set up</h1>
           <p className="lead">
-            One more thing worth doing now: a short questionnaire that gives you a personalized
-            assessment — your current level, focus areas, and things to watch. Takes about two
-            minutes, and you can always do it later from the dashboard.
+            Log your weight and workouts under Progress, keep a food log, and snap the occasional
+            body photo — the charts fill in as you go.
           </p>
           <div className="onboarding-actions">
-            <button onClick={() => navigate("/assessment")}>Take the assessment now</button>
-            <button className="secondary" onClick={() => navigate("/")}>
-              Maybe later — go to dashboard
-            </button>
+            <button onClick={() => navigate("/")}>Go to dashboard</button>
           </div>
         </>
       )}

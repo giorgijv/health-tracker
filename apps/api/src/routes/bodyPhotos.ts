@@ -15,10 +15,6 @@ function toBodyPhoto(row: Record<string, unknown>) {
     storagePath: row.storage_path,
     angle: row.angle,
     takenAt: row.taken_at,
-    // Legacy rows may still carry an AI read from before photo analysis was
-    // removed; new rows never populate these.
-    analysis: row.analysis_json ?? null,
-    model: row.model ?? null,
     createdAt: row.created_at,
   };
 }
