@@ -17,8 +17,8 @@ export default defineConfig({
         name: "Health Tracker",
         short_name: "HealthTracker",
         description: "Assess, track, and improve your health and fitness.",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+        theme_color: "#2a78d6",
+        background_color: "#eef1f5",
         display: "standalone",
         // App icons are added when branding lands — omitted for now to avoid
         // 404s from referencing files that don't exist yet.

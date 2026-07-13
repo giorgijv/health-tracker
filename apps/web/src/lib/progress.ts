@@ -5,12 +5,19 @@ export interface Point {
   value: number;
 }
 
+export type MetricField = "weightKg" | "bodyFatPctEst" | "waistCm";
+
+/** Ascending-by-date points for one metric field, skipping entries without it. */
+export function metricSeries(metrics: BodyMetric[], field: MetricField): Point[] {
+  return metrics
+    .filter((m) => m[field] != null)
+    .map((m) => ({ date: m.date, value: m[field] as number }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 /** Ascending-by-date weight points, skipping entries without a weight. */
 export function weightSeries(metrics: BodyMetric[]): Point[] {
-  return metrics
-    .filter((m): m is BodyMetric & { weightKg: number } => m.weightKg != null)
-    .map((m) => ({ date: m.date, value: m.weightKg }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return metricSeries(metrics, "weightKg");
 }
 
 /** Latest non-null value of a metric field, with the immediately prior value for a delta. */

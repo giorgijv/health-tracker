@@ -1,6 +1,12 @@
 import type { BodyMetric, Workout } from "@health-tracker/shared";
 import { describe, expect, it } from "vitest";
-import { latestWithDelta, weeklyWorkoutCounts, weightSeries, workoutsInLastDays } from "./progress";
+import {
+  latestWithDelta,
+  metricSeries,
+  weeklyWorkoutCounts,
+  weightSeries,
+  workoutsInLastDays,
+} from "./progress";
 
 const metric = (overrides: Partial<BodyMetric>): BodyMetric => ({
   id: "m",
@@ -40,6 +46,21 @@ describe("weightSeries", () => {
 
   it("returns an empty array when no weights are logged", () => {
     expect(weightSeries([metric({ weightKg: null })])).toEqual([]);
+  });
+});
+
+describe("metricSeries", () => {
+  it("extracts any metric field sorted ascending, skipping nulls", () => {
+    const metrics = [
+      metric({ date: "2026-07-10", bodyFatPctEst: 19 }),
+      metric({ date: "2026-07-01", bodyFatPctEst: 20.5 }),
+      metric({ date: "2026-07-05", bodyFatPctEst: null, weightKg: 81 }),
+    ];
+    expect(metricSeries(metrics, "bodyFatPctEst")).toEqual([
+      { date: "2026-07-01", value: 20.5 },
+      { date: "2026-07-10", value: 19 },
+    ]);
+    expect(metricSeries(metrics, "waistCm")).toEqual([]);
   });
 });
 

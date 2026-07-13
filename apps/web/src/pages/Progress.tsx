@@ -7,6 +7,7 @@ import { StatTile } from "../components/StatTile";
 import { apiFetch } from "../lib/api";
 import {
   latestWithDelta,
+  metricSeries,
   weeklyWorkoutCounts,
   weightSeries,
   workoutsInLastDays,
@@ -107,6 +108,8 @@ export function ProgressPage() {
   const weight = latestWithDelta(metrics, "weightKg");
   const bodyFat = latestWithDelta(metrics, "bodyFatPctEst");
   const waist = latestWithDelta(metrics, "waistCm");
+  const bodyFatTrend = metricSeries(metrics, "bodyFatPctEst");
+  const waistTrend = metricSeries(metrics, "waistCm");
   const weekBuckets = weeklyWorkoutCounts(workouts, 8);
   const thisWeek = workoutsInLastDays(workouts, 7);
   const thisMonth = workoutsInLastDays(workouts, 30);
@@ -138,14 +141,40 @@ export function ProgressPage() {
           </div>
 
           <section>
-            <h2>Weight trend</h2>
-            <LineChart data={weightSeries(metrics)} unit=" kg" />
+            <h2>
+              <span className="series-dot" style={{ background: "var(--series-1)" }} />
+              Weight trend
+            </h2>
+            <LineChart data={weightSeries(metrics)} unit=" kg" colorVar="--series-1" />
           </section>
 
           <section>
-            <h2>Workouts per week</h2>
+            <h2>
+              <span className="series-dot" style={{ background: "var(--series-2)" }} />
+              Workouts per week
+            </h2>
             <BarChart data={weekBuckets.map((b) => ({ label: b.label, value: b.count }))} />
           </section>
+
+          {bodyFatTrend.length > 0 && (
+            <section>
+              <h2>
+                <span className="series-dot" style={{ background: "var(--series-3)" }} />
+                Body fat trend
+              </h2>
+              <LineChart data={bodyFatTrend} unit=" %" colorVar="--series-3" />
+            </section>
+          )}
+
+          {waistTrend.length > 0 && (
+            <section>
+              <h2>
+                <span className="series-dot" style={{ background: "var(--series-4)" }} />
+                Waist trend
+              </h2>
+              <LineChart data={waistTrend} unit=" cm" colorVar="--series-4" />
+            </section>
+          )}
         </>
       )}
 

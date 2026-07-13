@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useElementWidth } from "../hooks/useElementWidth";
+import { smoothPath } from "../lib/chartPath";
 import type { Point } from "../lib/progress";
 
 interface Props {
   data: Point[];
   unit?: string;
   height?: number;
+  /** CSS custom property carrying the series color, e.g. "--series-1". */
+  colorVar?: string;
 }
 
 const PAD = { top: 16, right: 16, bottom: 28, left: 40 };
@@ -15,9 +18,10 @@ function formatDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export function LineChart({ data, unit = "", height = 220 }: Props) {
+export function LineChart({ data, unit = "", height = 220, colorVar = "--series-1" }: Props) {
   const [wrapRef, width] = useElementWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
+  const gradId = useId().replace(/:/g, "");
 
   if (data.length === 0) {
     return (
@@ -45,16 +49,30 @@ export function LineChart({ data, unit = "", height = 220 }: Props) {
     PAD.left + (data.length === 1 ? innerW / 2 : (i / (data.length - 1)) * innerW);
   const y = (v: number) => PAD.top + innerH - ((v - yMin) / (yMax - yMin)) * innerH;
 
-  const linePath = data.map((d, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(d.value)}`).join(" ");
+  const pts = data.map((d, i) => ({ x: x(i), y: y(d.value) }));
+  const linePath = smoothPath(pts);
+  const baseline = PAD.top + innerH;
+  const areaPath =
+    data.length > 1
+      ? `${linePath} L ${pts[pts.length - 1].x} ${baseline} L ${pts[0].x} ${baseline} Z`
+      : null;
 
   // Recessive y gridlines at min, mid, max.
   const yTicks = [yMin + range * 0.1, (yMin + yMax) / 2, yMax - range * 0.1];
 
   const activePoint = active != null ? data[active] : null;
+  const color = `var(${colorVar})`;
 
   return (
     <div className="chart" ref={wrapRef} style={{ position: "relative" }}>
       <svg width={w} height={height} role="img" aria-label={`Line chart of ${unit || "value"} over time`}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" style={{ stopColor: color }} stopOpacity={0.22} />
+            <stop offset="100%" style={{ stopColor: color }} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+
         {yTicks.map((t, i) => (
           <g key={i}>
             <line
@@ -79,7 +97,8 @@ export function LineChart({ data, unit = "", height = 220 }: Props) {
             </text>
           ))}
 
-        <path d={linePath} className="line" fill="none" />
+        {areaPath && <path d={areaPath} fill={`url(#${gradId})`} />}
+        <path d={linePath} className="line" style={{ stroke: color }} fill="none" />
 
         {data.map((d, i) => (
           <circle
@@ -88,6 +107,7 @@ export function LineChart({ data, unit = "", height = 220 }: Props) {
             cy={y(d.value)}
             r={active === i ? 6 : 4}
             className="dot"
+            style={{ fill: color }}
           />
         ))}
 
