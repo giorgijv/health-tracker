@@ -4,7 +4,16 @@
 -- sessions. Backward compatible: existing rows default to count = 1, which
 -- reproduces their old count-based contribution to weekly goals exactly.
 alter table workouts add column if not exists count int not null default 1;
-alter table workouts add constraint workouts_count_check check (count > 0 and count <= 100000);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'workouts'::regclass and conname = 'workouts_count_check'
+  ) then
+    alter table workouts add constraint workouts_count_check check (count > 0 and count <= 100000);
+  end if;
+end $$;
 
 -- Raise the weekly-goal target ceiling from 100 to 1000 (e.g. "1000 push-ups
 -- / week"). The original check constraint from 0009 had no explicit name, so
