@@ -56,11 +56,16 @@ export interface WeekBucket {
   count: number;
 }
 
-/** Count of workouts per week for the last `weeks` weeks, oldest first. */
+/**
+ * Count of workouts per week for the last `weeks` weeks, oldest first.
+ * Pass `type` to count only workouts matching that type (case-insensitive) —
+ * used for per-goal weekly progress.
+ */
 export function weeklyWorkoutCounts(
   workouts: Workout[],
   weeks = 8,
   now: Date = new Date(),
+  type?: string,
 ): WeekBucket[] {
   const thisWeekStart = startOfWeek(now);
   const buckets: WeekBucket[] = [];
@@ -76,7 +81,9 @@ export function weeklyWorkoutCounts(
   }
 
   const byWeek = new Map(buckets.map((b) => [b.weekStart, b]));
+  const typeLower = type?.toLowerCase();
   for (const w of workouts) {
+    if (typeLower != null && w.type.toLowerCase() !== typeLower) continue;
     // Parse the date as local midnight to keep week bucketing stable.
     const [y, m, d] = w.date.split("-").map(Number);
     if (!y || !m || !d) continue;
@@ -86,6 +93,19 @@ export function weeklyWorkoutCounts(
   }
 
   return buckets;
+}
+
+/** This week's count for a specific workout type, and the % of `target` it represents (0-100+). */
+export function weeklyGoalProgress(
+  workouts: Workout[],
+  type: string,
+  target: number,
+  now: Date = new Date(),
+): { count: number; target: number; pct: number } {
+  const [current] = weeklyWorkoutCounts(workouts, 1, now, type);
+  const count = current?.count ?? 0;
+  const pct = target > 0 ? Math.round((count / target) * 100) : 0;
+  return { count, target, pct };
 }
 
 /** Count of workouts in the last `days` days (inclusive of today). */

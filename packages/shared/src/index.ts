@@ -37,6 +37,16 @@ export interface Workout {
   createdAt: string;
 }
 
+/** A weekly target for a specific workout type, e.g. "Run" x3/week. */
+export interface WorkoutGoal {
+  id: string;
+  userId: string;
+  workoutType: string;
+  targetPerWeek: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type BodyPhotoAngle = "front" | "side" | "back";
 
 export interface BodyPhoto {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   latestWithDelta,
   metricSeries,
+  weeklyGoalProgress,
   weeklyWorkoutCounts,
   weightSeries,
   workoutsInLastDays,
@@ -125,5 +126,41 @@ describe("weeklyWorkoutCounts", () => {
   it("returns all-zero buckets when there are no workouts", () => {
     const buckets = weeklyWorkoutCounts([], 4, now);
     expect(buckets.every((b) => b.count === 0)).toBe(true);
+  });
+
+  it("filters by type case-insensitively when given", () => {
+    const workouts = [
+      workout({ date: "2026-07-09", type: "Run" }),
+      workout({ date: "2026-07-10", type: "run" }),
+      workout({ date: "2026-07-10", type: "Lift" }),
+    ];
+    const buckets = weeklyWorkoutCounts(workouts, 1, now, "RUN");
+    expect(buckets[0]).toMatchObject({ count: 2 });
+  });
+});
+
+describe("weeklyGoalProgress", () => {
+  const now = new Date("2026-07-11T12:00:00"); // a Saturday
+
+  it("computes count and percentage against the target", () => {
+    const workouts = [
+      workout({ date: "2026-07-09", type: "Run" }),
+      workout({ date: "2026-07-10", type: "Run" }),
+      workout({ date: "2026-07-10", type: "Lift" }),
+    ];
+    expect(weeklyGoalProgress(workouts, "Run", 3, now)).toEqual({ count: 2, target: 3, pct: 67 });
+  });
+
+  it("caps nothing — pct can exceed 100 when the goal is beaten", () => {
+    const workouts = [
+      workout({ date: "2026-07-06", type: "Run" }),
+      workout({ date: "2026-07-07", type: "Run" }),
+      workout({ date: "2026-07-08", type: "Run" }),
+    ];
+    expect(weeklyGoalProgress(workouts, "Run", 2, now)).toEqual({ count: 3, target: 2, pct: 150 });
+  });
+
+  it("returns zero count for an unlogged type", () => {
+    expect(weeklyGoalProgress([], "Yoga", 2, now)).toEqual({ count: 0, target: 2, pct: 0 });
   });
 });

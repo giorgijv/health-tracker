@@ -9,17 +9,27 @@ export interface Bar {
 interface Props {
   data: Bar[];
   height?: number;
+  ariaLabel?: string;
+  emptyMessage?: string;
+  /** CSS custom property carrying the bar color, e.g. "--series-1". */
+  colorVar?: string;
 }
 
 const PAD = { top: 16, right: 8, bottom: 24, left: 8 };
 const GAP = 2; // 2px surface gap between adjacent bars
 
-export function BarChart({ data, height = 180 }: Props) {
+export function BarChart({
+  data,
+  height = 180,
+  ariaLabel = "Workouts per week",
+  emptyMessage = "No workouts logged yet.",
+  colorVar = "--series-2",
+}: Props) {
   const [wrapRef, width] = useElementWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
 
   if (data.length === 0) {
-    return <div className="chart-empty">No workouts logged yet.</div>;
+    return <div className="chart-empty">{emptyMessage}</div>;
   }
 
   const w = width || 320;
@@ -28,10 +38,11 @@ export function BarChart({ data, height = 180 }: Props) {
   const max = Math.max(1, ...data.map((d) => d.value));
   const slot = innerW / data.length;
   const barW = Math.max(2, slot - GAP);
+  const color = `var(${colorVar})`;
 
   return (
     <div className="chart bars" ref={wrapRef} style={{ position: "relative" }}>
-      <svg width={w} height={height} role="img" aria-label="Workouts per week">
+      <svg width={w} height={height} role="img" aria-label={ariaLabel}>
         {data.map((d, i) => {
           const bh = (d.value / max) * innerH;
           const bx = PAD.left + i * slot + (slot - barW) / 2;
@@ -52,6 +63,7 @@ export function BarChart({ data, height = 180 }: Props) {
                   height={bh}
                   rx={4}
                   className={active === i ? "bar active" : "bar"}
+                  style={{ fill: color }}
                 />
               )}
               {/* direct value label (relief rule: color is never the sole carrier) */}

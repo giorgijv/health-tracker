@@ -9,6 +9,7 @@ import { OnboardingPage } from "./pages/Onboarding";
 import { ProgressPage } from "./pages/Progress";
 import { SettingsPage } from "./pages/Settings";
 import { SignupPage } from "./pages/Signup";
+import { WorkoutGoalsPage } from "./pages/WorkoutGoals";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -60,6 +61,14 @@ export function App() {
         element={
           <RequireAuth>
             <FoodLogPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <RequireAuth>
+            <WorkoutGoalsPage />
           </RequireAuth>
         }
       />

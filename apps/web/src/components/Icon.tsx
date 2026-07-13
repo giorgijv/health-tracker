@@ -1,26 +1,16 @@
 import type { ReactNode } from "react";
 
 export type IconName =
-  | "assessment"
   | "progress"
   | "photos"
   | "food"
-  | "recommendations"
-  | "coach"
+  | "target"
   | "settings"
   | "flame"
   | "scale";
 
 // Hand-inlined stroke icons (Feather/Lucide-style, MIT) — no icon library dependency.
 const PATHS: Record<IconName, ReactNode> = {
-  assessment: (
-    <>
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-      <rect x="8" y="2" width="8" height="4" rx="1" />
-      <path d="M9 12h6" />
-      <path d="M9 16h4" />
-    </>
-  ),
   progress: (
     <>
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -40,14 +30,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
     </>
   ),
-  recommendations: (
+  target: (
     <>
-      <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z" />
-      <path d="M9 21h6" />
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
     </>
-  ),
-  coach: (
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
   ),
   settings: (
     <>

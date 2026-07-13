@@ -413,17 +413,22 @@ a.hero-card:hover {
   align-items: center;
   justify-content: center;
   gap: 0.1rem;
+  padding: 0 12%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .ring-value {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1;
+  max-width: 100%;
 }
 
 .ring-caption {
   font-size: 0.7rem;
   color: var(--muted);
+  max-width: 100%;
 }
 
 /* Feature cards */
@@ -604,10 +609,10 @@ a.hero-card:hover {
 }
 
 .chart .bar {
-  fill: var(--series-2);
+  fill: var(--series-2); /* fallback only — BarChart sets the real color inline via colorVar */
 }
 .chart .bar.active {
-  fill: var(--series-1);
+  filter: brightness(1.15);
 }
 
 .chart .bar-label {
@@ -1508,4 +1513,72 @@ button.add-item {
 
 .settings .delete-account {
   background: #dc2626;
+}
+
+/* ============================================================
+   Weekly goals
+   ============================================================ */
+
+.goals {
+  width: 100%;
+  max-width: 760px;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.goal-card {
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.goal-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.goal-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.goal-ring-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.goal-edit-target {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.goal-edit-target label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.goal-edit-target input {
+  width: 6rem;
 }

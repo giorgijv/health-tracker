@@ -9,6 +9,9 @@ project.
 
 - **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
 - **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
+- **Weekly goals** — set a weekly target per workout type (e.g. "Run" x3/week);
+  track this week's count as a percentage achieved, with an 8-week trend chart
+  per goal.
 - **Body photos** — a private visual timeline of your progress (upload only —
   compare them yourself over time).
 - **Food log** — log meals and macros by hand.
@@ -28,7 +31,7 @@ render.yaml, DEPLOY.md   Deployment blueprint & guide
 
 1. **Create a Supabase project** at https://supabase.com/dashboard — free tier is fine.
 2. In the Supabase SQL editor, run each migration in `supabase/migrations/` in
-   order (`0001_init.sql` … `0008_remove_photo_analysis.sql`). `0004` also
+   order (`0001_init.sql` … `0009_workout_goals.sql`). `0004` also
    creates a private storage bucket (`body-photos`, still used for the
    photo-timeline feature) and its access policies; `0005` creates
    `food-photos` too — that bucket is unused by the app now (food logging is
@@ -60,8 +63,9 @@ npm test
 ```
 
 Runs the unit test suite (vitest) across all three workspaces: pure logic in
-`apps/web/src/lib/progress.ts`, the shared `sumFoodItems` helper, and the
-metrics/workouts input-validation schemas. Runs in CI on every push and PR.
+`apps/web/src/lib/progress.ts` (including weekly-goal progress math), the
+shared `sumFoodItems` helper, and the metrics/workouts/workout-goals
+input-validation schemas. Runs in CI on every push and PR.
 Route handlers themselves aren't covered yet (would need integration tests
 against a real or test Supabase project) — see `DEPLOY.md` for that gap.
 

@@ -11,6 +11,7 @@ const WEEKLY_WORKOUT_GOAL = 3;
 
 const FEATURES: { to: string; title: string; desc: string; icon: IconName; accent: string }[] = [
   { to: "/progress", title: "Progress", desc: "Weight, workouts & trend charts", icon: "progress", accent: "blue" },
+  { to: "/goals", title: "Weekly goals", desc: "Set workout targets & track % achieved", icon: "target", accent: "aqua" },
   { to: "/body-photos", title: "Body photos", desc: "A private visual timeline of your progress", icon: "photos", accent: "magenta" },
   { to: "/food-log", title: "Food log", desc: "Log your meals and macros", icon: "food", accent: "orange" },
 ];
