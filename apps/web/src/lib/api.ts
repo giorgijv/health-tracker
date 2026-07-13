@@ -1,3 +1,4 @@
+import { describeError } from "./apiError";
 import { supabase } from "./supabase";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,7 +21,7 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
     let message = `Request failed (${res.status})`;
     try {
       const body = await res.json();
-      if (typeof body?.error === "string") message = body.error;
+      message = describeError(body) ?? message;
     } catch {
       // non-JSON error body — keep the status-based message
     }

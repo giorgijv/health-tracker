@@ -60,8 +60,12 @@ export function WorkoutGoalsPage() {
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
+    if (!type.trim()) return;
     const targetNum = Math.round(Number(target));
-    if (!type.trim() || !Number.isFinite(targetNum) || targetNum < 1) return;
+    if (!Number.isFinite(targetNum) || targetNum < 1 || targetNum > TARGET_MAX) {
+      setError(`Target per week must be between 1 and ${TARGET_MAX}.`);
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -94,7 +98,10 @@ export function WorkoutGoalsPage() {
 
   async function saveEdit(goal: WorkoutGoal) {
     const targetNum = Math.round(Number(editing[goal.id]));
-    if (!Number.isFinite(targetNum) || targetNum < 1) return;
+    if (!Number.isFinite(targetNum) || targetNum < 1 || targetNum > TARGET_MAX) {
+      setError(`Target per week must be between 1 and ${TARGET_MAX}.`);
+      return;
+    }
 
     setError(null);
     try {
@@ -120,7 +127,10 @@ export function WorkoutGoalsPage() {
 
   async function logProgress(goal: WorkoutGoal) {
     const n = Math.round(Number(logDraft[goal.id]));
-    if (!Number.isFinite(n) || n < 1) return;
+    if (!Number.isFinite(n) || n < 1 || n > COUNT_MAX) {
+      setError(`Progress count must be between 1 and ${COUNT_MAX}.`);
+      return;
+    }
 
     setError(null);
     try {
