@@ -142,7 +142,8 @@ export interface FoodTotals {
 export interface FoodLog {
   id: string;
   userId: string;
-  storagePath: string;
+  /** Legacy field from when meals had an attached photo — always null on new entries. */
+  storagePath: string | null;
   eatenAt: string;
   mealType: MealType;
   items: FoodItem[];

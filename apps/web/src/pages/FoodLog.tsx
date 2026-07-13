@@ -1,40 +1,26 @@
-import {
-  FOOD_PHOTOS_BUCKET,
-  sumFoodItems,
-  type FoodAnalysis,
-  type FoodItem,
-  type FoodLog,
-  type MealType,
-} from "@health-tracker/shared";
+import { sumFoodItems, type FoodItem, type FoodLog, type MealType } from "@health-tracker/shared";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../lib/AuthContext";
 import { apiFetch } from "../lib/api";
-import { signedUrl, uploadImage } from "../lib/storage";
 
 interface Draft {
-  storagePath: string;
-  // null = manual entry (no AI call was made) — the review UI hides the
-  // AI-specific confidence/quality/caution sections in that case.
-  analysis: FoodAnalysis | null;
   items: FoodItem[];
 }
 
 const NUMERIC_FIELDS: (keyof FoodItem)[] = ["estGrams", "calories", "proteinG", "carbsG", "fatG"];
 
-function FoodLogCard({ log, onDelete }: { log: FoodLog; onDelete: (id: string) => void }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    signedUrl(FOOD_PHOTOS_BUCKET, log.storagePath).then((u) => alive && setUrl(u));
-    return () => {
-      alive = false;
-    };
-  }, [log.storagePath]);
+const blankItem = (): FoodItem => ({
+  name: "",
+  estGrams: 0,
+  calories: 0,
+  proteinG: 0,
+  carbsG: 0,
+  fatG: 0,
+});
 
+function FoodLogCard({ log, onDelete }: { log: FoodLog; onDelete: (id: string) => void }) {
   return (
     <div className="food-log-card">
-      {url ? <img src={url} alt="meal" /> : <div className="img-skeleton" />}
       <div className="food-log-body">
         <div className="food-log-head">
           <span className="meal-type">{log.mealType}</span>
@@ -54,11 +40,6 @@ function FoodLogCard({ log, onDelete }: { log: FoodLog; onDelete: (id: string) =
             </li>
           ))}
         </ul>
-        {log.nutritionalQuality && (
-          <p className={`quality ${log.nutritionalQuality.rating}`}>
-            {log.nutritionalQuality.rating}: {log.nutritionalQuality.notes}
-          </p>
-        )}
         <button className="delete" onClick={() => onDelete(log.id)}>
           Delete
         </button>
@@ -68,14 +49,11 @@ function FoodLogCard({ log, onDelete }: { log: FoodLog; onDelete: (id: string) =
 }
 
 export function FoodLogPage() {
-  const { session } = useAuth();
   const [logs, setLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [mealType, setMealType] = useState<MealType>("lunch");
-  const [file, setFile] = useState<File | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -92,54 +70,6 @@ export function FoodLogPage() {
   useEffect(() => {
     load();
   }, []);
-
-  async function handleAnalyze() {
-    if (!file || !session) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setStatus("Uploading…");
-      const storagePath = await uploadImage(FOOD_PHOTOS_BUCKET, session.user.id, file);
-      setStatus("Estimating calories and macros…");
-      const analysis = await apiFetch<FoodAnalysis>("/api/food-logs/analyze", {
-        method: "POST",
-        body: JSON.stringify({ storagePath }),
-      });
-      setDraft({ storagePath, analysis, items: analysis.items.map((it) => ({ ...it })) });
-      setFile(null);
-      setStatus(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Analysis failed");
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // Skips the AI call entirely — just uploads the photo (for your own record)
-  // and opens the same review form with a blank item to fill in by hand.
-  // Also what you reach for if you've hit the daily analysis limit.
-  async function handleManual() {
-    if (!file || !session) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setStatus("Uploading…");
-      const storagePath = await uploadImage(FOOD_PHOTOS_BUCKET, session.user.id, file);
-      setDraft({
-        storagePath,
-        analysis: null,
-        items: [{ name: "", estGrams: 0, calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }],
-      });
-      setFile(null);
-      setStatus(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   function updateItem(index: number, field: keyof FoodItem, value: string) {
     setDraft((d) => {
@@ -158,14 +88,7 @@ export function FoodLogPage() {
   }
 
   function addItem() {
-    setDraft((d) =>
-      d
-        ? {
-            ...d,
-            items: [...d.items, { name: "", estGrams: 0, calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }],
-          }
-        : d,
-    );
+    setDraft((d) => (d ? { ...d, items: [...d.items, blankItem()] } : d));
   }
 
   async function handleSave() {
@@ -175,14 +98,7 @@ export function FoodLogPage() {
     try {
       const created = await apiFetch<FoodLog>("/api/food-logs", {
         method: "POST",
-        body: JSON.stringify({
-          storagePath: draft.storagePath,
-          mealType,
-          items: draft.items,
-          confidence: draft.analysis?.confidence ?? null,
-          nutritionalQuality: draft.analysis?.nutritionalQuality ?? null,
-          aiAnalysis: draft.analysis ?? undefined,
-        }),
+        body: JSON.stringify({ mealType, items: draft.items }),
       });
       setLogs((prev) => [created, ...prev]);
       setDraft(null);
@@ -222,47 +138,16 @@ export function FoodLogPage() {
               <option value="snack">Snack</option>
             </select>
           </label>
-          <label>
-            Photo
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          <div className="draft-actions">
-            <button onClick={handleAnalyze} disabled={!file || busy}>
-              {busy ? "Working…" : "Analyze photo"}
-            </button>
-            <button className="secondary" onClick={handleManual} disabled={!file || busy}>
-              Log manually
-            </button>
-          </div>
-          <p className="hint">
-            AI analysis is limited to a few photos a day. Log manually anytime — it's free and just
-            as fast if you already know the numbers.
-          </p>
+          <button onClick={() => setDraft({ items: [blankItem()] })}>Log a meal</button>
         </div>
       )}
 
-      {status && <p className="status">{status}</p>}
       {error && <p className="error">{error}</p>}
 
       {draft && totals && (
         <div className="draft-editor">
-          <h2>Review &amp; edit</h2>
-          {draft.analysis ? (
-            <p className="editor-note">
-              These are estimates{" "}
-              <span className={`conf ${draft.analysis.confidence}`}>
-                {draft.analysis.confidence} confidence
-              </span>
-              . Adjust anything before you log it.
-            </p>
-          ) : (
-            <p className="editor-note">Enter the meal's details below.</p>
-          )}
+          <h2>Meal details</h2>
+          <p className="editor-note">Enter what you ate — you can look up calories/macros or estimate.</p>
 
           <div className="items-table">
             <div className="items-head">
@@ -300,22 +185,6 @@ export function FoodLogPage() {
             <strong>{Math.round(totals.calories)} kcal</strong> · P {Math.round(totals.proteinG)} ·
             C {Math.round(totals.carbsG)} · F {Math.round(totals.fatG)}
           </div>
-
-          {draft.analysis && (
-            <>
-              <p className={`quality ${draft.analysis.nutritionalQuality.rating}`}>
-                {draft.analysis.nutritionalQuality.rating}: {draft.analysis.nutritionalQuality.notes}
-              </p>
-
-              {draft.analysis.cautions.length > 0 && (
-                <ul className="cautions">
-                  {draft.analysis.cautions.map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
 
           <div className="draft-actions">
             <button onClick={handleSave} disabled={busy || draft.items.length === 0}>

@@ -14,6 +14,11 @@ Auth (login/signup) runs entirely client-side against Supabase, so the web app
 works on its own. Every other feature (progress, photos, food log,
 recommendations, coach) calls the API, so those stay broken until it's deployed.
 
+**No photo analysis:** body/food photos are never sent to Claude — body
+photos are a private visual timeline only, and food logging is text-only
+(no photo). This was a deliberate cost cut; see § 6 for what still calls the
+model.
+
 ## 1. Prerequisites
 
 - Supabase project with all migrations in `supabase/migrations/` applied and the
@@ -102,18 +107,19 @@ back to the live site instead of `localhost`.
   builds) but that verification doesn't run again on future changes. Real
   regression coverage there would need integration tests against a live (or
   dockerized) Supabase instance — not set up yet.
-- Model/effort choices per feature (tune in the respective `lib/*.ts`):
+- Model/effort choices per feature (tune in the respective `lib/*.ts`). There
+  is no vision/photo-analysis call anywhere in the app — every AI call below
+  is text-only:
   | Feature | Model | Effort |
   |---|---|---|
-  | Initial & periodic assessment | `claude-opus-4-8` | high |
-  | Body-photo analysis | `claude-opus-4-8` | high |
-  | Food-photo analysis | `claude-opus-4-8` | high |
+  | Initial & periodic assessment | `claude-opus-4-8` | medium |
   | Recommendations | `claude-opus-4-8` | medium |
   | Coach chat | `claude-opus-4-8` | medium |
   | Nudges | `claude-haiku-4-5` | (n/a — Haiku) |
 
-  The photo/assessment calls are the expensive ones. If cost is a concern before
-  quality is validated, drop those to `medium` first.
+  These are all low-frequency (assessments) or naturally rate-limited by usage
+  (chat, recommendations) — the 40 calls/hour shared budget above is the
+  practical ceiling on spend now that photo analysis is gone.
 
 ## 7. GitHub Pages (web app hosting)
 

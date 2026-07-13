@@ -5,13 +5,7 @@ import { useAuth } from "../lib/AuthContext";
 import { apiFetch } from "../lib/api";
 import { signedPhotoUrl, uploadBodyPhoto } from "../lib/bodyPhotos";
 
-type PhotoWithError = BodyPhoto & { analysisError?: string };
-
-function PhotoCard({ photo, onDelete, onRetry }: {
-  photo: PhotoWithError;
-  onDelete: (id: string) => void;
-  onRetry: (id: string) => void;
-}) {
+function PhotoCard({ photo, onDelete }: { photo: BodyPhoto; onDelete: (id: string) => void }) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,8 +18,6 @@ function PhotoCard({ photo, onDelete, onRetry }: {
     };
   }, [photo.storagePath]);
 
-  const a = photo.analysis;
-
   return (
     <div className="photo-card">
       <div className="photo-img">
@@ -34,41 +26,6 @@ function PhotoCard({ photo, onDelete, onRetry }: {
       </div>
       <div className="photo-meta">
         <div className="photo-date">{new Date(photo.takenAt).toLocaleDateString()}</div>
-
-        {a ? (
-          <div className="analysis">
-            <ul className="observations">
-              {a.observations.map((o, i) => (
-                <li key={i}>{o}</li>
-              ))}
-            </ul>
-            {a.comparisonToPrevious && (
-              <p className="comparison">
-                <strong>vs. previous:</strong> {a.comparisonToPrevious}
-              </p>
-            )}
-            {a.estimatedBodyFatRange && (
-              <p className="estimate">
-                Rough body-fat estimate: <strong>{a.estimatedBodyFatRange}</strong>{" "}
-                <span className={`conf ${a.confidence}`}>{a.confidence} confidence</span>
-              </p>
-            )}
-            {a.cautions.length > 0 && (
-              <ul className="cautions">
-                {a.cautions.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            )}
-            <p className="encouragement">{a.encouragement}</p>
-          </div>
-        ) : (
-          <div className="analysis-pending">
-            <p>{photo.analysisError ?? "Not analyzed yet."}</p>
-            <button onClick={() => onRetry(photo.id)}>Analyze</button>
-          </div>
-        )}
-
         <button className="delete" onClick={() => onDelete(photo.id)}>
           Delete
         </button>
@@ -79,7 +36,7 @@ function PhotoCard({ photo, onDelete, onRetry }: {
 
 export function BodyPhotosPage() {
   const { session } = useAuth();
-  const [photos, setPhotos] = useState<PhotoWithError[]>([]);
+  const [photos, setPhotos] = useState<BodyPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [angle, setAngle] = useState<BodyPhotoAngle>("front");
   const [file, setFile] = useState<File | null>(null);
@@ -90,7 +47,7 @@ export function BodyPhotosPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await apiFetch<PhotoWithError[]>("/api/body-photos");
+      const data = await apiFetch<BodyPhoto[]>("/api/body-photos");
       setPhotos(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load photos");
@@ -112,8 +69,7 @@ export function BodyPhotosPage() {
     try {
       setStatus("Uploading…");
       const storagePath = await uploadBodyPhoto(session.user.id, file);
-      setStatus("Analyzing your photo — this can take a moment…");
-      const created = await apiFetch<PhotoWithError>("/api/body-photos", {
+      const created = await apiFetch<BodyPhoto>("/api/body-photos", {
         method: "POST",
         body: JSON.stringify({ storagePath, angle }),
       });
@@ -137,17 +93,6 @@ export function BodyPhotosPage() {
     }
   }
 
-  async function handleRetry(id: string) {
-    try {
-      const updated = await apiFetch<PhotoWithError>(`/api/body-photos/${id}/analyze`, {
-        method: "POST",
-      });
-      setPhotos((prev) => prev.map((p) => (p.id === id ? updated : p)));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Analysis failed");
-    }
-  }
-
   return (
     <div className="body-photos">
       <p>
@@ -155,10 +100,9 @@ export function BodyPhotosPage() {
       </p>
       <h1>Body photos</h1>
       <p className="lead">
-        Track visible changes over time. Shoot the same angle in similar lighting for the most
-        useful comparisons. Progress shows up better week to week than day to day, so AI analysis
-        is limited to a couple of times a week — upload as often as you like, and analyze the ones
-        you want a read on.
+        A private visual timeline of your progress. Shoot the same angle in similar lighting for
+        the most useful comparisons — line them up side by side under Progress in your head, or
+        just scroll back through them over time.
       </p>
 
       <form onSubmit={handleUpload} className="upload-form">
@@ -180,7 +124,7 @@ export function BodyPhotosPage() {
           />
         </label>
         <button type="submit" disabled={!file || busy}>
-          {busy ? "Working…" : "Upload & analyze"}
+          {busy ? "Uploading…" : "Upload"}
         </button>
       </form>
 
@@ -188,8 +132,7 @@ export function BodyPhotosPage() {
       {error && <p className="error">{error}</p>}
 
       <p className="disclaimer">
-        These are subjective visual impressions from your photos — not measurements or medical
-        assessments. Pair them with the numbers you log under Progress.
+        Photos are stored privately and only ever shown to you via short-lived signed links.
       </p>
 
       {loading ? (
@@ -199,7 +142,7 @@ export function BodyPhotosPage() {
       ) : (
         <div className="photo-grid">
           {photos.map((p) => (
-            <PhotoCard key={p.id} photo={p} onDelete={handleDelete} onRetry={handleRetry} />
+            <PhotoCard key={p.id} photo={p} onDelete={handleDelete} />
           ))}
         </div>
       )}

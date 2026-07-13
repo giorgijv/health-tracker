@@ -12,8 +12,8 @@ const WEEKLY_WORKOUT_GOAL = 3;
 const FEATURES: { to: string; title: string; desc: string; icon: IconName; accent: string }[] = [
   { to: "/assessment", title: "Assessment", desc: "Your level, focus areas & progress reads", icon: "assessment", accent: "violet" },
   { to: "/progress", title: "Progress", desc: "Weight, workouts & trend charts", icon: "progress", accent: "blue" },
-  { to: "/body-photos", title: "Body photos", desc: "Visible changes, tracked with AI", icon: "photos", accent: "magenta" },
-  { to: "/food-log", title: "Food log", desc: "Snap a meal for calories & macros", icon: "food", accent: "orange" },
+  { to: "/body-photos", title: "Body photos", desc: "A private visual timeline of your progress", icon: "photos", accent: "magenta" },
+  { to: "/food-log", title: "Food log", desc: "Log your meals and macros", icon: "food", accent: "orange" },
   { to: "/recommendations", title: "Recommendations", desc: "What to focus on next", icon: "recommendations", accent: "yellow" },
   { to: "/coach", title: "Coach", desc: "Ask anything about your health", icon: "coach", accent: "aqua" },
 ];

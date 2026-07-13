@@ -1,23 +1,26 @@
 # health-tracker
 
-Personal health & fitness tracking app: assessment, recommendations, progress
-tracking, and photo-based feedback (body composition + food/calories).
+Personal health & fitness tracking app: assessment, recommendations, and
+progress tracking — all driven by text you enter, not photo analysis.
 
 ## Features
 
 - **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
 - **Assessment** — AI intake assessment and periodic re-assessments with a
-  "how far you've come" progress read (`claude-opus-4-8`).
+  "how far you've come" progress read, from your questionnaire and tracked
+  data only (`claude-opus-4-8`).
 - **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
-- **Body photos** — private uploads with AI visual analysis vs. prior photos.
-- **Food log** — snap a meal → AI calorie/macro estimate you edit before logging.
+- **Body photos** — a private visual timeline of your progress (upload only —
+  no AI analysis; compare them yourself over time).
+- **Food log** — log meals and macros by hand.
 - **Recommendations** — prioritized, data-grounded advice synthesized from your logs.
 - **Coach chat** — multi-turn Q&A over your data, plus short proactive nudges (`claude-haiku-4-5`).
 - **Privacy** — private photo storage, signed-URL access, and full account/data deletion.
 
-All AI features degrade gracefully without an `ANTHROPIC_API_KEY` (they return a
-clear "not configured" error; everything else keeps working). AI endpoints are
-per-user rate-limited to cap spend.
+No feature sends an image to Claude — every AI call is text-only, which keeps
+per-call cost low and predictable. AI features degrade gracefully without an
+`ANTHROPIC_API_KEY` (they return a clear "not configured" error; everything
+else keeps working). AI endpoints are per-user rate-limited to cap spend.
 
 ## Structure
 
@@ -33,10 +36,13 @@ render.yaml, DEPLOY.md   Deployment blueprint & guide
 
 1. **Create a Supabase project** at https://supabase.com/dashboard — free tier is fine.
 2. In the Supabase SQL editor, run each migration in `supabase/migrations/` in
-   order (`0001_init.sql` … `0007_chat.sql`). `0004` and `0005` also create
-   private storage buckets (`body-photos`, `food-photos`) and their access
-   policies; if the storage-policy statements error in the SQL editor, create the
-   buckets (private) and equivalent policies from the Storage section of the
+   order (`0001_init.sql` … `0008_remove_photo_analysis.sql`). `0004` also
+   creates a private storage bucket (`body-photos`, still used for the
+   photo-timeline feature) and its access policies; `0005` creates
+   `food-photos` too — that bucket is now unused by the app (food logging is
+   text-only) but is left in place for any photos already in it. If the
+   storage-policy statements error in the SQL editor, create the buckets
+   (private) and equivalent policies from the Storage section of the
    dashboard instead.
 3. Copy env templates and fill in your project's values (Project Settings → API):
    ```
@@ -81,5 +87,6 @@ against a real or test Supabase project) — see `DEPLOY.md` for that gap.
 ## Next steps
 
 See the full plan: data model + core API (step 2), initial assessment (step 3),
-progress dashboards (step 4), then photo-based body/food analysis (steps 5-6)
-using the Claude API.
+progress dashboards (step 4), photo tracking + food logging (steps 5-6, later
+simplified to drop AI photo analysis for cost), using the Claude API for the
+text-only features.

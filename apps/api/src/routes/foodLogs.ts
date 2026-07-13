@@ -2,11 +2,7 @@ import { FOOD_PHOTOS_BUCKET, sumFoodItems, type FoodItem } from "@health-tracker
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
-import { aiRateLimit, foodPhotoAiRateLimit } from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
-import { classifyAiError } from "../lib/aiError.js";
-import { downloadImage } from "../lib/imageDownload.js";
-import { FOOD_ANALYSIS_MODEL, analyzeFoodPhoto } from "../lib/foodAnalysis.js";
 
 export const foodLogsRouter = Router();
 
@@ -16,7 +12,7 @@ function toFoodLog(row: Record<string, unknown>) {
   return {
     id: row.id,
     userId: row.user_id,
-    storagePath: row.storage_path,
+    storagePath: row.storage_path ?? null,
     eatenAt: row.eaten_at,
     mealType: row.meal_type,
     items: row.items_json,
@@ -33,41 +29,6 @@ function toFoodLog(row: Record<string, unknown>) {
   };
 }
 
-function ownsPath(userId: string, storagePath: string): boolean {
-  return storagePath.startsWith(`${userId}/`);
-}
-
-// --- Analyze a photo without saving anything. The client edits the result,
-// --- then calls POST / to persist. ---
-const analyzeSchema = z.object({ storagePath: z.string().min(1) });
-
-foodLogsRouter.post("/analyze", foodPhotoAiRateLimit, aiRateLimit, async (req: AuthedRequest, res) => {
-  const parsed = analyzeSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
-  }
-  if (!ownsPath(req.userId!, parsed.data.storagePath)) {
-    res.status(403).json({ error: "storagePath must be within your own folder" });
-    return;
-  }
-
-  const image = await downloadImage(FOOD_PHOTOS_BUCKET, parsed.data.storagePath);
-  if (!image) {
-    res.status(400).json({ error: "Could not read the uploaded image" });
-    return;
-  }
-
-  try {
-    const analysis = await analyzeFoodPhoto(image);
-    res.json(analysis);
-  } catch (err) {
-    const info = classifyAiError(err);
-    console.error(`Food analysis failed [${info.label}]:`, err);
-    res.status(info.status).json({ error: info.message });
-  }
-});
-
 const itemSchema = z.object({
   name: z.string().min(1).max(200),
   estGrams: z.number().min(0).max(5000),
@@ -77,19 +38,10 @@ const itemSchema = z.object({
   fatG: z.number().min(0).max(1000),
 });
 
-const qualitySchema = z.object({
-  rating: z.enum(["poor", "fair", "good", "excellent"]),
-  notes: z.string().max(1000),
-});
-
 const createSchema = z.object({
-  storagePath: z.string().min(1),
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
   eatenAt: z.string().datetime().optional(),
   items: z.array(itemSchema).min(1).max(50),
-  confidence: z.enum(["low", "medium", "high"]).nullable().optional(),
-  nutritionalQuality: qualitySchema.nullable().optional(),
-  aiAnalysis: z.unknown().optional(),
 });
 
 foodLogsRouter.post("/", async (req: AuthedRequest, res) => {
@@ -98,12 +50,8 @@ foodLogsRouter.post("/", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  if (!ownsPath(req.userId!, parsed.data.storagePath)) {
-    res.status(403).json({ error: "storagePath must be within your own folder" });
-    return;
-  }
 
-  // Recompute totals server-side from the final (edited) items — never trust
+  // Recompute totals server-side from the submitted items — never trust
   // client-sent totals.
   const totals = sumFoodItems(parsed.data.items as FoodItem[]);
 
@@ -111,18 +59,13 @@ foodLogsRouter.post("/", async (req: AuthedRequest, res) => {
     .from("food_logs")
     .insert({
       user_id: req.userId,
-      storage_path: parsed.data.storagePath,
       meal_type: parsed.data.mealType,
       eaten_at: parsed.data.eatenAt ?? new Date().toISOString(),
       items_json: parsed.data.items,
-      ai_analysis_json: parsed.data.aiAnalysis ?? null,
       total_calories: totals.calories,
       total_protein_g: totals.proteinG,
       total_carbs_g: totals.carbsG,
       total_fat_g: totals.fatG,
-      confidence: parsed.data.confidence ?? null,
-      nutritional_quality_json: parsed.data.nutritionalQuality ?? null,
-      model: parsed.data.aiAnalysis ? FOOD_ANALYSIS_MODEL : null,
     })
     .select()
     .single();
@@ -171,7 +114,10 @@ foodLogsRouter.delete("/:id", async (req: AuthedRequest, res) => {
     return;
   }
 
-  await supabaseAdmin.storage.from(FOOD_PHOTOS_BUCKET).remove([row.storage_path]);
+  // Legacy rows may still have a photo attached — clean it up if so.
+  if (row.storage_path) {
+    await supabaseAdmin.storage.from(FOOD_PHOTOS_BUCKET).remove([row.storage_path]);
+  }
 
   const { error: delErr } = await supabaseAdmin
     .from("food_logs")

@@ -78,33 +78,11 @@ export function rateLimit(opts: RateLimitOpts) {
   };
 }
 
-/** Shared budget across all AI endpoints: caps a user's model spend per hour. */
+/**
+ * Shared budget across all AI endpoints: caps a user's model spend per hour.
+ * Photo analysis (the highest-frequency, highest-cost usage) has been removed
+ * entirely, so this now only covers assessments, recommendations, and chat —
+ * all text-only and comparatively rare.
+ */
 export const aiLimitOpts: RateLimitOpts = { limit: 40, windowMs: 60 * 60 * 1000, key: "ai" };
 export const aiRateLimit = rateLimit(aiLimitOpts);
-
-/**
- * Photo analysis is the most expensive, highest-frequency AI usage (vision +
- * thinking tokens on every upload), so it gets its own tighter budget on top
- * of the general aiRateLimit — nudging toward periodic progress checks rather
- * than logging every meal/photo through the model.
- */
-export const foodPhotoAiRateLimit = rateLimit({
-  limit: 6,
-  windowMs: 24 * 60 * 60 * 1000,
-  key: "food-photo-ai",
-  message: "You've reached today's food photo analysis limit.",
-});
-
-/**
- * Exported as opts (not just a middleware) because body-photo upload also
- * needs to *check* this budget inline — without blocking the photo save
- * itself — when analysis is skipped for being over the limit.
- */
-export const bodyPhotoAiLimitOpts: RateLimitOpts = {
-  limit: 2,
-  windowMs: 7 * 24 * 60 * 60 * 1000,
-  key: "body-photo-ai",
-  message: "Body photo analysis is limited to a couple of times a week — progress shows up better week to week than day to day.",
-};
-
-export const bodyPhotoAiRateLimit = rateLimit(bodyPhotoAiLimitOpts);
