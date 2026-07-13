@@ -13,8 +13,14 @@ const app = express();
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" }));
 app.use(express.json());
 
+// Report the deployed commit so "is the API up to date?" is a one-request
+// check instead of a guessing game. Render injects RENDER_GIT_COMMIT for
+// every deploy; falls back to "local"/an explicit override elsewhere.
+const DEPLOYED_COMMIT =
+  process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? "local";
+
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", commit: DEPLOYED_COMMIT });
 });
 
 app.use("/api/profile", profileRouter);

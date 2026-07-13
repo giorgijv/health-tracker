@@ -1,0 +1,71 @@
+name: Deploy API to Render
+
+# Render's own auto-deploy has been unreliable for this service, so we drive
+# the API deploy from GitHub Actions instead — the same pipeline that already
+# deploys the web app dependably. On every push that touches the API, this:
+#   1. triggers a Render deploy via a Deploy Hook URL, then
+#   2. polls the live /health endpoint until it reports the pushed commit,
+#      so the run goes green ONLY once the new code is actually live.
+#
+# One-time setup (repo → Settings → Secrets and variables → Actions):
+#   - RENDER_DEPLOY_HOOK_URL : Render service → Settings → Deploy Hook (copy URL)
+#   - VITE_API_URL           : already set for Pages; reused here for /health
+#     (e.g. https://health-tracker-api-9cd4.onrender.com)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "packages/shared/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set — add it under repo Settings → Secrets and variables → Actions. See DEPLOY.md."
+            exit 1
+          fi
+          echo "Triggering Render deploy for commit $GITHUB_SHA…"
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOOK")
+          echo "Deploy hook responded HTTP $code"
+          # Render deploy hooks return 200/201 on accept.
+          case "$code" in 200|201) : ;; *) echo "::error::Deploy hook rejected the request (HTTP $code)"; exit 1 ;; esac
+
+      - name: Wait for the new commit to go live
+        env:
+          API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::warning::VITE_API_URL secret not set — deploy was triggered but cannot be verified. Set it to enable verification."
+            exit 0
+          fi
+          base="${API_URL%/}"
+          target="$GITHUB_SHA"
+          echo "Waiting for $base/health to report commit ${target:0:12}…"
+          # ~12 min: covers Render's build + free-tier cold start.
+          for i in $(seq 1 48); do
+            live=$(curl -fsS -m 25 "$base/health" 2>/dev/null | jq -r '.commit // empty' 2>/dev/null || true)
+            echo "attempt $i/48 — live=${live:-<unreachable>} target=${target:0:12}"
+            if [ -n "$live" ] && [ "$live" != "local" ] && [ "${live:0:12}" = "${target:0:12}" ]; then
+              echo "✅ API is now live on commit $live"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::API did not report commit ${target:0:12} within ~12 min. Check the Render dashboard build logs."
+          exit 1

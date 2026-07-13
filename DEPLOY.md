@@ -43,12 +43,41 @@ Supabase and (optionally) Render. The app is pure data entry + charts.
 4. Deploy. First build takes a few minutes. Render gives you a URL like
    `https://health-tracker-api.onrender.com` — copy it.
 5. Confirm it's alive: open `<that-url>/health` in a browser, expect
-   `{"status":"ok"}`.
+   `{"status":"ok","commit":"<the git SHA that's live>"}`. That `commit` field
+   is the source of truth for **which version is actually deployed** — compare
+   it to the latest commit on `main` whenever you suspect a stale API.
 
 **Free-tier note:** Render's free web services spin down after 15 minutes of no
 traffic and take up to ~50s to wake on the next request. The first API call
 after idle will feel slow (or time out and need a retry) — this is expected on
 the free plan, not a bug.
+
+## 2b. Deploy the API reliably from GitHub Actions (recommended)
+
+Render's built-in auto-deploy proved unreliable for this service (pushes to
+`main` silently didn't redeploy the API, so the frontend and backend drifted
+out of sync — the frontend would show new features the stale API rejected).
+The fix: drive the API deploy from GitHub Actions, the same pipeline that
+deploys the web app dependably. `.github/workflows/deploy-api.yml` does this —
+it triggers a Render **Deploy Hook** on every push that touches the API, then
+polls `/health` until it reports the pushed commit, so the workflow only goes
+green once the new code is genuinely live.
+
+One-time setup:
+
+1. **Render** → the `health-tracker-api` service → **Settings → Deploy Hook** →
+   copy the URL (looks like `https://api.render.com/deploy/srv-…?key=…`).
+2. **GitHub** → repo → Settings → Secrets and variables → Actions → add:
+   - `RENDER_DEPLOY_HOOK_URL` — the URL from step 1.
+   - `VITE_API_URL` — already set for Pages (§ 3); the workflow reuses it to
+     verify `/health`.
+3. **Turn OFF Render's own auto-deploy** (Render → service → Settings → Build &
+   Deploy → Auto-Deploy → **No**), so the two mechanisms don't race. The
+   GitHub workflow is now the single, verifiable path.
+
+After this, every push that changes `apps/api/**` or `packages/shared/**`
+redeploys the API and the Actions run tells you — green/red — whether it
+actually went live. No more dashboard guesswork.
 
 ## 3. Point the web app at the deployed API
 
