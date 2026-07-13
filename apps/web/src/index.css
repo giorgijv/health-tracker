@@ -1021,7 +1021,8 @@ button.delete {
   margin: 1rem 0;
 }
 
-.editor-note {
+.editor-note,
+.hint {
   font-size: 0.9rem;
   color: var(--text-secondary);
 }

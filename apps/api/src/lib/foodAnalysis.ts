@@ -72,12 +72,16 @@ export async function analyzeFoodPhoto(image: ImageInput): Promise<FoodAnalysisO
     },
   ];
 
+  // Runs on every meal photo — by far the highest-frequency AI call in the
+  // app, so it gets the lowest effort/token budget of any call here. This is
+  // a itemized visual estimate the user reviews and edits before saving, not
+  // a judgment call that benefits much from deep reasoning.
   const response = await client.messages.parse({
     model: FOOD_ANALYSIS_MODEL,
-    max_tokens: 16000,
+    max_tokens: 4000,
     thinking: { type: "adaptive" },
     output_config: {
-      effort: "high",
+      effort: "low",
       format: zodOutputFormat(foodAnalysisSchema),
     },
     system: SYSTEM_PROMPT,

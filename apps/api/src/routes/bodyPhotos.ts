@@ -2,7 +2,13 @@ import { BODY_PHOTOS_BUCKET } from "@health-tracker/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
-import { aiRateLimit } from "../middleware/rateLimit.js";
+import {
+  aiLimitOpts,
+  aiRateLimit,
+  bodyPhotoAiLimitOpts,
+  bodyPhotoAiRateLimit,
+  consumeRateLimit,
+} from "../middleware/rateLimit.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { classifyAiError } from "../lib/aiError.js";
 import { downloadImage, type MediaType } from "../lib/imageDownload.js";
@@ -83,7 +89,7 @@ const createSchema = z.object({
   takenAt: z.string().datetime().optional(),
 });
 
-bodyPhotosRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
+bodyPhotosRouter.post("/", async (req: AuthedRequest, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -115,8 +121,21 @@ bodyPhotosRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
     return;
   }
 
-  // Analyze inline. If it fails (e.g. no credits), keep the saved photo and
-  // report why, so the client can retry via POST /:id/analyze.
+  // The photo is already saved at this point regardless of what happens next
+  // — a hit budget or a failed AI call should never lose the upload, only
+  // skip the analysis (the client can retry via POST /:id/analyze once it
+  // resets, using the same "Analyze" button it shows for any failed analysis).
+  const budget = consumeRateLimit(req.userId, bodyPhotoAiLimitOpts);
+  if (budget.limited) {
+    res.status(201).json({ ...toBodyPhoto(row), analysisError: budget.message });
+    return;
+  }
+  const aiBudget = consumeRateLimit(req.userId, aiLimitOpts);
+  if (aiBudget.limited) {
+    res.status(201).json({ ...toBodyPhoto(row), analysisError: aiBudget.message });
+    return;
+  }
+
   try {
     const updated = await runAnalysis(req.userId!, row);
     res.status(201).json(toBodyPhoto(updated));
@@ -127,7 +146,7 @@ bodyPhotosRouter.post("/", aiRateLimit, async (req: AuthedRequest, res) => {
   }
 });
 
-bodyPhotosRouter.post("/:id/analyze", aiRateLimit, async (req: AuthedRequest, res) => {
+bodyPhotosRouter.post("/:id/analyze", bodyPhotoAiRateLimit, aiRateLimit, async (req: AuthedRequest, res) => {
   const { data: row, error } = await supabaseAdmin
     .from("body_photos")
     .select("*")

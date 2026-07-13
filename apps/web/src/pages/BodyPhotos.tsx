@@ -156,7 +156,9 @@ export function BodyPhotosPage() {
       <h1>Body photos</h1>
       <p className="lead">
         Track visible changes over time. Shoot the same angle in similar lighting for the most
-        useful comparisons.
+        useful comparisons. Progress shows up better week to week than day to day, so AI analysis
+        is limited to a couple of times a week — upload as often as you like, and analyze the ones
+        you want a read on.
       </p>
 
       <form onSubmit={handleUpload} className="upload-form">

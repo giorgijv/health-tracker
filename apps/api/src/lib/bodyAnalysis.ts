@@ -100,12 +100,15 @@ export async function analyzeBodyPhoto(params: {
       (params.previous ? ", including what changed from the previous photo." : "."),
   });
 
+  // Runs on every progress-photo upload (now rate-limited to a couple/week —
+  // see bodyPhotoAiLimitOpts). Medium effort/lower token cap keeps this cheap
+  // without losing the current-vs-previous comparison quality.
   const response = await client.messages.parse({
     model: BODY_ANALYSIS_MODEL,
-    max_tokens: 16000,
+    max_tokens: 4000,
     thinking: { type: "adaptive" },
     output_config: {
-      effort: "high",
+      effort: "medium",
       format: zodOutputFormat(bodyAnalysisSchema),
     },
     system: SYSTEM_PROMPT,

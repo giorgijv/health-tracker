@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { rateLimit } from "./rateLimit.js";
+import { consumeRateLimit, rateLimit } from "./rateLimit.js";
 import type { AuthedRequest } from "./auth.js";
 
 // Mirrors the shape the middleware actually touches, without pulling in Express.
@@ -93,5 +93,42 @@ describe("rateLimit", () => {
     expect(res3.statusCode).toBe(200);
 
     vi.useRealTimers();
+  });
+
+  it("formats the retry message in a readable unit for day-scale windows", () => {
+    const mw = rateLimit({
+      limit: 1,
+      windowMs: 24 * 60 * 60 * 1000,
+      key: "test-d",
+      message: "Daily limit hit.",
+    });
+    const req = { userId: "user-1" } as AuthedRequest;
+
+    mw(req, mockRes() as never, vi.fn());
+
+    const res = mockRes();
+    mw(req, res as never, vi.fn());
+    expect(res.statusCode).toBe(429);
+    expect(res.body).toMatchObject({ error: expect.stringMatching(/^Daily limit hit\. Try again in about \d+h\.$/) });
+    expect(res.headers["Retry-After"]).not.toMatch(/^-/);
+  });
+});
+
+describe("consumeRateLimit", () => {
+  it("lets a caller check a budget without blocking unrelated request logic", () => {
+    const opts = { limit: 1, windowMs: 60_000, key: "test-inline" };
+
+    const first = consumeRateLimit("user-1", opts);
+    expect(first).toEqual({ limited: false });
+
+    const second = consumeRateLimit("user-1", opts);
+    expect(second.limited).toBe(true);
+    if (second.limited) {
+      expect(second.message).toContain("Try again in about");
+    }
+
+    // A different budget key for the same user is unaffected.
+    const other = consumeRateLimit("user-1", { ...opts, key: "test-inline-2" });
+    expect(other).toEqual({ limited: false });
   });
 });

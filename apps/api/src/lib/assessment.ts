@@ -94,10 +94,12 @@ export async function generateAssessment(intake: Parameters<typeof formatIntake>
     model: ASSESSMENT_MODEL,
     max_tokens: 16000,
     thinking: { type: "adaptive" },
-    // High effort: this is a judgment-heavy synthesis where quality matters more
-    // than latency or cost. Revisit per step 10 based on real usage.
+    // Medium effort: this runs once per user (or rarely, for re-assessment),
+    // so it isn't the cost driver photo analysis is — but "high" was more
+    // than this text-synthesis task needs. Bump back to "high" if quality
+    // feels shallow in testing.
     output_config: {
-      effort: "high",
+      effort: "medium",
       format: zodOutputFormat(assessmentSummarySchema),
     },
     system: SYSTEM_PROMPT,
@@ -169,8 +171,9 @@ export async function generatePeriodicAssessment(params: {
     model: ASSESSMENT_MODEL,
     max_tokens: 16000,
     thinking: { type: "adaptive" },
+    // Medium effort — see the note on generateAssessment above.
     output_config: {
-      effort: "high",
+      effort: "medium",
       format: zodOutputFormat(periodicAssessmentSchema),
     },
     system: PERIODIC_SYSTEM_PROMPT,

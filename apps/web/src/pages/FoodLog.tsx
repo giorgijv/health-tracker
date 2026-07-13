@@ -14,7 +14,9 @@ import { signedUrl, uploadImage } from "../lib/storage";
 
 interface Draft {
   storagePath: string;
-  analysis: FoodAnalysis;
+  // null = manual entry (no AI call was made) — the review UI hides the
+  // AI-specific confidence/quality/caution sections in that case.
+  analysis: FoodAnalysis | null;
   items: FoodItem[];
 }
 
@@ -114,6 +116,31 @@ export function FoodLogPage() {
     }
   }
 
+  // Skips the AI call entirely — just uploads the photo (for your own record)
+  // and opens the same review form with a blank item to fill in by hand.
+  // Also what you reach for if you've hit the daily analysis limit.
+  async function handleManual() {
+    if (!file || !session) return;
+    setBusy(true);
+    setError(null);
+    try {
+      setStatus("Uploading…");
+      const storagePath = await uploadImage(FOOD_PHOTOS_BUCKET, session.user.id, file);
+      setDraft({
+        storagePath,
+        analysis: null,
+        items: [{ name: "", estGrams: 0, calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }],
+      });
+      setFile(null);
+      setStatus(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setStatus(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function updateItem(index: number, field: keyof FoodItem, value: string) {
     setDraft((d) => {
       if (!d) return d;
@@ -152,9 +179,9 @@ export function FoodLogPage() {
           storagePath: draft.storagePath,
           mealType,
           items: draft.items,
-          confidence: draft.analysis.confidence,
-          nutritionalQuality: draft.analysis.nutritionalQuality,
-          aiAnalysis: draft.analysis,
+          confidence: draft.analysis?.confidence ?? null,
+          nutritionalQuality: draft.analysis?.nutritionalQuality ?? null,
+          aiAnalysis: draft.analysis ?? undefined,
         }),
       });
       setLogs((prev) => [created, ...prev]);
@@ -204,9 +231,18 @@ export function FoodLogPage() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </label>
-          <button onClick={handleAnalyze} disabled={!file || busy}>
-            {busy ? "Working…" : "Analyze photo"}
-          </button>
+          <div className="draft-actions">
+            <button onClick={handleAnalyze} disabled={!file || busy}>
+              {busy ? "Working…" : "Analyze photo"}
+            </button>
+            <button className="secondary" onClick={handleManual} disabled={!file || busy}>
+              Log manually
+            </button>
+          </div>
+          <p className="hint">
+            AI analysis is limited to a few photos a day. Log manually anytime — it's free and just
+            as fast if you already know the numbers.
+          </p>
         </div>
       )}
 
@@ -216,13 +252,17 @@ export function FoodLogPage() {
       {draft && totals && (
         <div className="draft-editor">
           <h2>Review &amp; edit</h2>
-          <p className="editor-note">
-            These are estimates{" "}
-            <span className={`conf ${draft.analysis.confidence}`}>
-              {draft.analysis.confidence} confidence
-            </span>
-            . Adjust anything before you log it.
-          </p>
+          {draft.analysis ? (
+            <p className="editor-note">
+              These are estimates{" "}
+              <span className={`conf ${draft.analysis.confidence}`}>
+                {draft.analysis.confidence} confidence
+              </span>
+              . Adjust anything before you log it.
+            </p>
+          ) : (
+            <p className="editor-note">Enter the meal's details below.</p>
+          )}
 
           <div className="items-table">
             <div className="items-head">
@@ -261,16 +301,20 @@ export function FoodLogPage() {
             C {Math.round(totals.carbsG)} · F {Math.round(totals.fatG)}
           </div>
 
-          <p className={`quality ${draft.analysis.nutritionalQuality.rating}`}>
-            {draft.analysis.nutritionalQuality.rating}: {draft.analysis.nutritionalQuality.notes}
-          </p>
+          {draft.analysis && (
+            <>
+              <p className={`quality ${draft.analysis.nutritionalQuality.rating}`}>
+                {draft.analysis.nutritionalQuality.rating}: {draft.analysis.nutritionalQuality.notes}
+              </p>
 
-          {draft.analysis.cautions.length > 0 && (
-            <ul className="cautions">
-              {draft.analysis.cautions.map((c, i) => (
-                <li key={i}>{c}</li>
-              ))}
-            </ul>
+              {draft.analysis.cautions.length > 0 && (
+                <ul className="cautions">
+                  {draft.analysis.cautions.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
 
           <div className="draft-actions">
