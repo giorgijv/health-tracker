@@ -123,7 +123,10 @@ export function weeklyGoalTotals(
     if (!y || !m || !d) continue;
     const key = ymd(startOfWeek(new Date(y, m - 1, d)));
     const bucket = byWeek.get(key);
-    if (bucket) bucket.count += w.count;
+    // Defensive: an API response missing `count` (e.g. briefly served by a
+    // build that predates it) must never poison the sum with NaN — treat it
+    // as the documented default of 1 rather than propagating undefined.
+    if (bucket) bucket.count += w.count ?? 1;
   }
 
   return buckets;

@@ -159,6 +159,18 @@ describe("weeklyGoalTotals", () => {
     const buckets = weeklyGoalTotals([], "Yoga", 4, now);
     expect(buckets.every((b) => b.count === 0)).toBe(true);
   });
+
+  it("treats a missing count as 1 instead of producing NaN (stale API response)", () => {
+    const stale = workout({ date: "2026-07-09", type: "Push ups", count: 10 });
+    delete (stale as Partial<Workout>).count;
+    const workouts = [
+      stale,
+      workout({ date: "2026-07-10", type: "Push ups", count: 5 }),
+    ];
+    const buckets = weeklyGoalTotals(workouts, "Push ups", 1, now);
+    expect(buckets[0].count).toBe(6);
+    expect(Number.isNaN(buckets[0].count)).toBe(false);
+  });
 });
 
 describe("weeklyGoalProgress", () => {
