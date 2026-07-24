@@ -10,9 +10,13 @@ project.
 - **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
 - **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
 - **Weekly goals** — set a weekly target per workout type, up to 1000 (e.g.
-  "Push ups" x100/week, "Run" x3/week). Log progress per goal as you go — each
-  entry's count sums toward the week's total (10 today + 10 tomorrow = 20/100)
-  — and track it as a percentage achieved, with an 8-week trend chart per goal.
+  "Push ups" x100/week, "Run" x3/week). Pick the exercise from a built-in
+  catalog grouped by muscle group (Abs, Back, Chest, Biceps, Triceps,
+  Shoulders, Legs, Glutes, Cardio) — each with a form-cue illustration — or
+  fall back to a custom name for anything not in the list. Log progress per
+  goal as you go — each entry's count sums toward the week's total (10 today
+  + 10 tomorrow = 20/100) — and track it as a percentage achieved, with an
+  8-week trend chart per goal.
 - **Body photos** — a private visual timeline of your progress (upload only —
   compare them yourself over time).
 - **Food log** — log meals and macros by hand.

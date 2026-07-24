@@ -1,8 +1,16 @@
-import type { Workout, WorkoutGoal } from "@health-tracker/shared";
+import {
+  EXERCISES,
+  EXERCISE_CATEGORIES,
+  exercisesByCategory,
+  type ExerciseCategory,
+  type Workout,
+  type WorkoutGoal,
+} from "@health-tracker/shared";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { ActivityRing } from "../components/ActivityRing";
 import { BarChart } from "../components/BarChart";
+import { ExercisePictogram } from "../components/ExercisePictogram";
 import { apiFetch } from "../lib/api";
 import { weeklyGoalProgress, weeklyGoalTotals } from "../lib/progress";
 
@@ -11,6 +19,10 @@ import { weeklyGoalProgress, weeklyGoalTotals } from "../lib/progress";
 const SERIES_VARS = ["--series-1", "--series-2", "--series-3", "--series-4"];
 const TARGET_MAX = 1000;
 const COUNT_MAX = 100000;
+
+// Sentinel exerciseId meaning "not in the catalog — use the free-text input".
+const CUSTOM = "__custom__";
+const CATEGORY_OPTIONS: (ExerciseCategory | "Custom")[] = [...EXERCISE_CATEGORIES, "Custom"];
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -28,9 +40,23 @@ export function WorkoutGoalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [type, setType] = useState("");
+  const [category, setCategory] = useState<ExerciseCategory | "Custom">(CATEGORY_OPTIONS[0]);
+  const [exerciseId, setExerciseId] = useState<string>(
+    category === "Custom" ? CUSTOM : (exercisesByCategory(CATEGORY_OPTIONS[0] as ExerciseCategory)[0]?.id ?? CUSTOM),
+  );
+  const [customType, setCustomType] = useState("");
   const [target, setTarget] = useState("3");
   const [saving, setSaving] = useState(false);
+
+  const catalogExercises = category === "Custom" ? [] : exercisesByCategory(category);
+  const selectedExercise = catalogExercises.find((e) => e.id === exerciseId);
+  // What actually gets saved as the goal's workout type.
+  const resolvedType = selectedExercise ? selectedExercise.name : customType.trim();
+
+  function handleCategoryChange(next: ExerciseCategory | "Custom") {
+    setCategory(next);
+    setExerciseId(next === "Custom" ? CUSTOM : (exercisesByCategory(next)[0]?.id ?? CUSTOM));
+  }
 
   // goalId -> draft target text while its inline editor is open.
   const [editing, setEditing] = useState<Record<string, string>>({});
@@ -60,7 +86,10 @@ export function WorkoutGoalsPage() {
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
-    if (!type.trim()) return;
+    if (!resolvedType) {
+      setError("Pick an exercise, or enter a custom one.");
+      return;
+    }
     const targetNum = Math.round(Number(target));
     if (!Number.isFinite(targetNum) || targetNum < 1 || targetNum > TARGET_MAX) {
       setError(`Target per week must be between 1 and ${TARGET_MAX}.`);
@@ -72,10 +101,10 @@ export function WorkoutGoalsPage() {
     try {
       const created = await apiFetch<WorkoutGoal>("/api/workout-goals", {
         method: "POST",
-        body: JSON.stringify({ workoutType: type.trim(), targetPerWeek: targetNum }),
+        body: JSON.stringify({ workoutType: resolvedType, targetPerWeek: targetNum }),
       });
       setGoals((prev) => [...prev, created]);
-      setType("");
+      setCustomType("");
       setTarget("3");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add goal");
@@ -204,15 +233,55 @@ export function WorkoutGoalsPage() {
 
           <form onSubmit={handleAdd} className="upload-form">
             <label>
-              Workout type
-              <input
-                type="text"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                placeholder="Run, Lift, Push ups…"
-                required
-              />
+              Muscle group
+              <select
+                value={category}
+                onChange={(e) => handleCategoryChange(e.target.value as ExerciseCategory | "Custom")}
+              >
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c === "Custom" ? "Custom / Other" : c}
+                  </option>
+                ))}
+              </select>
             </label>
+
+            {category !== "Custom" && (
+              <label>
+                Exercise
+                <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)}>
+                  {catalogExercises.map((ex) => (
+                    <option key={ex.id} value={ex.id}>
+                      {ex.name}
+                    </option>
+                  ))}
+                  <option value={CUSTOM}>Custom / Other exercise…</option>
+                </select>
+              </label>
+            )}
+
+            {(category === "Custom" || exerciseId === CUSTOM) && (
+              <label>
+                {category === "Custom" ? "Workout type" : "Custom exercise name"}
+                <input
+                  type="text"
+                  value={customType}
+                  onChange={(e) => setCustomType(e.target.value)}
+                  placeholder="Run, Yoga, Swimming…"
+                  required
+                />
+              </label>
+            )}
+
+            {selectedExercise && (
+              <div className="exercise-preview">
+                <span className="exercise-pictogram">
+                  <ExercisePictogram pose={selectedExercise.pose} />
+                </span>
+                <span className="exercise-cue">{selectedExercise.cue}</span>
+              </div>
+            )}
+
             <label>
               Target per week
               <input
@@ -243,12 +312,20 @@ export function WorkoutGoalsPage() {
                   .filter((w) => w.type.toLowerCase() === goal.workoutType.toLowerCase())
                   .sort((a, b) => b.date.localeCompare(a.date))
                   .slice(0, 5);
+                const catalogMatch = EXERCISES.find(
+                  (ex) => ex.name.toLowerCase() === goal.workoutType.toLowerCase(),
+                );
 
                 return (
                   <div className="goal-card" key={goal.id}>
                     <div className="goal-card-head">
                       <span className="goal-type">
                         <span className="series-dot" style={{ background: `var(${colorVar})` }} />
+                        {catalogMatch && (
+                          <span className="exercise-pictogram exercise-pictogram-inline">
+                            <ExercisePictogram pose={catalogMatch.pose} size={20} />
+                          </span>
+                        )}
                         {goal.workoutType}
                       </span>
                       <button className="delete" onClick={() => handleDeleteGoal(goal.id)}>

@@ -1,3 +1,5 @@
+export * from "./exercises.js";
+
 export type ActivityLevel =
   | "sedentary"
   | "light"
