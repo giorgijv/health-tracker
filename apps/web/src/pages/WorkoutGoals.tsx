@@ -276,7 +276,7 @@ export function WorkoutGoalsPage() {
             {selectedExercise && (
               <div className="exercise-preview">
                 <span className="exercise-pictogram">
-                  <ExercisePictogram pose={selectedExercise.pose} />
+                  <ExercisePictogram pose={selectedExercise.pose} size={96} />
                 </span>
                 <span className="exercise-cue">{selectedExercise.cue}</span>
               </div>
@@ -323,7 +323,7 @@ export function WorkoutGoalsPage() {
                         <span className="series-dot" style={{ background: `var(${colorVar})` }} />
                         {catalogMatch && (
                           <span className="exercise-pictogram exercise-pictogram-inline">
-                            <ExercisePictogram pose={catalogMatch.pose} size={20} />
+                            <ExercisePictogram pose={catalogMatch.pose} size={20} animate={false} />
                           </span>
                         )}
                         {goal.workoutType}
