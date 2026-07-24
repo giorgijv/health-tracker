@@ -1642,6 +1642,46 @@ button.add-item {
   color: var(--accent-aqua);
 }
 
+/* Looping exercise-demo motion. CSS (not SMIL — Chromium throttles SMIL
+   transforms almost to a standstill) so it auto-plays reliably on mobile.
+   `transform-box: view-box` makes translate lengths and transform-origin
+   resolve in the 0–24 viewBox user space, so pose coordinates and joint
+   pivots can be given directly (e.g. rotate a forearm about the elbow at
+   9,9 via --ep-o: 9px 9px). Params come from inline custom props per pose. */
+.ep-move {
+  transform-box: view-box;
+  transform-origin: var(--ep-o, 50% 50%);
+  animation: var(--ep-kf) var(--ep-d, 1.4s) var(--ep-t, ease-in-out) infinite;
+  will-change: transform;
+}
+@keyframes ep-bob {
+  50% {
+    transform: translate(var(--ep-dx, 0px), var(--ep-dy, 0px));
+  }
+}
+@keyframes ep-rot {
+  50% {
+    transform: rotate(var(--ep-r, 0deg));
+  }
+}
+@keyframes ep-twist {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(var(--ep-r, 12deg));
+  }
+  75% {
+    transform: rotate(calc(-1 * var(--ep-r, 12deg)));
+  }
+}
+@keyframes ep-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* The tiny badge on each goal-card header stays small and static. */
 .exercise-pictogram-inline {
   width: 22px;
