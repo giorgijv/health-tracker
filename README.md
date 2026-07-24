@@ -7,7 +7,8 @@ project.
 
 ## Features
 
-- **Auth** — email/password accounts (Supabase), per-user data isolation via RLS.
+- **Auth** — email/password accounts (Supabase), per-user data isolation via
+  RLS, with a "Forgot password?" email-link flow to reset a lost password.
 - **Progress** — log weight & workouts; weight-trend and workout-frequency charts.
 - **Weekly goals** — set a weekly target per workout type, up to 1000 (e.g.
   "Push ups" x100/week, "Run" x3/week). Pick the exercise from a built-in
@@ -78,6 +79,11 @@ against a real or test Supabase project) — see `DEPLOY.md` for that gap.
 
 - Frontend uses `@supabase/supabase-js` directly for sign up / log in / log out
   (email + password; Supabase handles email confirmation).
+- "Forgot password?" on the login page sends a reset-link email
+  (`ForgotPassword.tsx`). `AuthContext` listens for Supabase's
+  `PASSWORD_RECOVERY` event and `App.tsx` shows `ResetPassword.tsx` the
+  moment it fires — see `DEPLOY.md` § 5 for why it's wired this way instead
+  of a plain `/reset-password` route.
 - Backend verifies the Supabase-issued JWT on every request via
   `requireAuth` middleware (`apps/api/src/middleware/auth.ts`), then scopes
   all queries to `req.userId`.

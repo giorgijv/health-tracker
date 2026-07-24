@@ -98,18 +98,26 @@ the page's origin — fix it on Render and it takes effect on the next deploy
 ## 5. Supabase auth redirect
 
 Supabase dashboard → Authentication → URL Configuration → add your GitHub
-Pages URL to the allowed redirect URLs, so any email-based auth link points
-back to the live site instead of `localhost`.
+Pages **origin + base path** to the allowed redirect URLs — e.g.
+`https://<your-username>.github.io/health-tracker/` — so the password-reset
+link points back to the live site instead of `localhost`. This must match
+exactly what `ForgotPassword.tsx` builds (`window.location.origin +
+import.meta.env.BASE_URL`).
 
-> **Known caveat:** the web app uses `HashRouter` for GitHub Pages compatibility
-> (§ "GitHub Pages" below), and Supabase's default auth flow also puts session
-> tokens in the URL hash on email-confirmation / password-reset links. The two
-> can collide. Practical workaround for now: keep **Confirm email** off
-> (Authentication → Providers → Email), as already suggested in the README —
-> that avoids the collision entirely since no hash-based link is ever sent. If
-> you need email confirmation or password reset in production, that requires
-> switching Supabase to PKCE flow (query-param based, no hash), which isn't
-> done yet — flagging as a follow-up rather than shipping it unverified.
+> **HashRouter + Supabase recovery links:** the web app uses `HashRouter`
+> (§ "GitHub Pages" below), and Supabase's password-recovery link puts
+> `access_token`/`type=recovery` in the URL hash too — the two would collide
+> if the recovery link redirected into a specific hash route like
+> `#/reset-password`. The fix: `resetPasswordForEmail` redirects to the site
+> **root** (no hash route), and `AuthContext` listens for Supabase's
+> `PASSWORD_RECOVERY` auth event directly rather than relying on the router
+> to match a `/reset-password` path — `App.tsx` shows the reset-password
+> screen the instant that event fires, regardless of which (possibly
+> garbled) route the link's hash landed on. No PKCE migration needed.
+>
+> One remaining limitation inherent to email links: if a user requests the
+> reset on one device/browser and opens the email on another, the link still
+> works (this flow doesn't depend on local PKCE state), so that's fine.
 
 ## 6. Reliability notes
 
